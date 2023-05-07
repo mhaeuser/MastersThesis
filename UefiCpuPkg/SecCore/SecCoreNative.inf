@@ -46,7 +46,7 @@
   DebugAgentLib
   CpuLib
   UefiCpuLib
-  UefiImageLib
+  UefiImageOnlyFvLib
   UefiImageExtraActionLib
   CpuExceptionHandlerLib
   ReportStatusCodeLib

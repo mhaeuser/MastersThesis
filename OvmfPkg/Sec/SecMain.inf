@@ -48,7 +48,7 @@
   UefiCpuLib
   DebugAgentLib
   IoLib
-  UefiImageLib
+  UefiImageOnlyFvLib
   UefiImageExtraActionLib
   ExtractGuidedSectionLib
   LocalApicLib
