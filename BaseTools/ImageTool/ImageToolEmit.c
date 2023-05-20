@@ -161,6 +161,11 @@ ToolImageEmit (
   } else {
     assert (false);
   }
+  
+  if (OutputFile == NULL) {
+    raise ();
+    return NULL;
+  }
 
   Status = ValidateOutputFile (OutputFile, *OutputFileSize, &ImageInfo);
 
