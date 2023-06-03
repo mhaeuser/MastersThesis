@@ -18,6 +18,7 @@
 [Sources]
   CommonSupport.c
   ExecutionSupport.c
+  UeSupport.c
   PeSupport.c
   UefiImageLib.c
 
