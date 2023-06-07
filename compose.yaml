@@ -1,0 +1,35 @@
+#
+# Copyright (c) 2023 Marvin Häuser. All rights reserved.<BR>
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+
+name: ue
+services:
+  edk2-base:
+    image: ue-dev
+    volumes:
+      - ${PWD}:/com.docker.devenvironments.code
+  edk2-build:
+    extends:
+      service: edk2-base
+    environment:
+      - EDK2_BUILD_CMD
+    working_dir: /com.docker.devenvironments.code/audk
+    entrypoint:
+      - /bin/bash
+      - -c
+      - ". ./edksetup.sh && ${EDK2_BUILD_CMD}"
+  edk2-test:
+    extends:
+      service: edk2-base
+    environment:
+      - EDK2_TEST_CMD
+      - PACKAGE
+      - ARCHS
+      - TARGETS
+      - TOOLCHAIN
+    working_dir: /com.docker.devenvironments.code
+    entrypoint:
+      - /bin/bash
+      - -c
+      - "${EDK2_TEST_CMD}"

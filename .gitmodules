@@ -1,0 +1,8 @@
+[submodule "audk"]
+	path = audk
+	url = https://github.com/mhaeuser/MastersThesis.git
+	branch = audk
+[submodule "ocbuild"]
+	path = ocbuild
+	url = https://github.com/mhaeuser/MastersThesis.git
+	branch = ocbuild

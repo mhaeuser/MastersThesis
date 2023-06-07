@@ -1,0 +1,293 @@
+#
+# Copyright (c) 2023 Savva Mitrofanov. All rights reserved.<BR>
+# Copyright (c) 2023 Marvin Häuser. All rights reserved.<BR>
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+
+name: Build ARM Firmwares (Repro)
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+  build-linux-gcc5:
+    name: Linux GCC5
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Use Docker in rootless mode.
+        uses: ScribeMD/rootless-docker@0.2.2
+
+      - name: Download ue-dev Docker Image
+        uses: robinraju/release-downloader@v1.7
+        with:
+          repository: "mhaeuser/MastersThesis"
+          tag: "ue-dev-release"
+          fileName: "ue-dev.tar.xz"
+
+      - name: Set up ue-dev Docker Image
+        run: |
+          docker load -i ue-dev.tar.xz
+          rm -f ue-dev.tar.xz
+
+      - name: Build BaseTools
+        run: docker compose run edk2-build
+        env:
+          EDK2_BUILD_CMD: make -j -C BaseTools
+
+      - name: Build ArmVirtQemu (ARM)
+        if: always()
+        run: docker compose run edk2-build
+        env:
+          EDK2_BUILD_CMD: build -p ArmVirtPkg/ArmVirtQemu.dsc -t GCC5 -a ARM -b RELEASE -b DEBUG -b NOOPT
+
+      - name: Build ArmVirtQemu (AARCH64)
+        if: always()
+        run: docker compose run edk2-build
+        env:
+          EDK2_BUILD_CMD: build -p ArmVirtPkg/ArmVirtQemu.dsc -t GCC5 -a AARCH64 -b RELEASE -b DEBUG -b NOOPT
+
+      - name: Prepare artifacts with firmwares
+        if: always()
+        run: |
+          IFS=', ' read -r -a TARGETS <<< "$TARGETS"
+          IFS=', ' read -r -a ARCHS <<< "$ARCHS"
+          for target in "${TARGETS[@]}"; do
+            for arch in "${ARCHS[@]}"; do
+              mkdir -p ./firmware_artifacts/ArmVirtQemu/"$arch"/"$target"_"$TOOLCHAIN"
+              cp ./audk/Build/ArmVirtQemu-"$arch"/"$target"_"$TOOLCHAIN"/FV/QEMU_EFI.fd ./firmware_artifacts/ArmVirtQemu/"$arch"/"$target"_"$TOOLCHAIN"/FW.fd
+              done
+          done
+        env:
+          ARCHS: ARM,AARCH64
+          TARGETS: RELEASE,DEBUG,NOOPT
+          TOOLCHAIN: GCC5
+
+      - name: Prepare artifacts with images
+        if: always()
+        run: |
+          IFS=', ' read -r -a TARGETS <<< "$TARGETS"
+          IFS=', ' read -r -a ARCHS <<< "$ARCHS"
+          for target in "${TARGETS[@]}"; do
+            for arch in "${ARCHS[@]}"; do
+              mkdir -p ./image_artifacts/ArmVirtQemu/"$target"_"$TOOLCHAIN"/"$arch"/
+              cp ./audk/Build/ArmVirtQemu-"$arch"/"$target"_"$TOOLCHAIN"/"$arch"/*.efi ./image_artifacts/ArmVirtQemu/"$target"_"$TOOLCHAIN"/"$arch"/
+              done
+          done
+        env:
+          ARCHS: ARM,AARCH64
+          TARGETS: RELEASE,DEBUG,NOOPT
+          TOOLCHAIN: GCC5
+
+      - name: Zip artifacts
+        run: |
+          mkdir Binaries/
+          zip Binaries/GCC5_fw_arm_artifacts.zip ./firmware_artifacts/* -r
+          zip Binaries/GCC5_img_arm_artifacts.zip ./image_artifacts/* -r
+
+      - name: Upload firmware to Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: GCC5 Firmware ARM Artifacts
+          path: Binaries/GCC5_fw_arm_artifacts.zip
+
+      - name: Upload images to Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: GCC5 Image ARM Artifacts
+          path: Binaries/GCC5_img_arm_artifacts.zip
+
+      - name: Upload to Release
+        if: github.event_name == 'release'
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: Binaries/*
+          tag: ${{ github.ref }}
+          file_glob: true
+
+  build-linux-clangdwarf:
+    name: Linux CLANGDWARF
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Use Docker in rootless mode.
+        uses: ScribeMD/rootless-docker@0.2.2
+
+      - name: Download ue-dev Docker Image
+        uses: robinraju/release-downloader@v1.7
+        with:
+          repository: "mhaeuser/MastersThesis"
+          tag: "ue-dev-release"
+          fileName: "ue-dev.tar.xz"
+
+      - name: Set up ue-dev Docker Image
+        run: |
+          docker load -i ue-dev.tar.xz
+          rm -f ue-dev.tar.xz
+
+      - name: Build BaseTools
+        run: docker compose run edk2-build
+        env:
+          EDK2_BUILD_CMD: make -j -C BaseTools
+
+      - name: Build ArmVirtQemu (ARM)
+        if: always()
+        run: docker compose run edk2-build
+        env:
+          EDK2_BUILD_CMD: build -p ArmVirtPkg/ArmVirtQemu.dsc -t CLANGDWARF -a ARM -b RELEASE -b DEBUG -b NOOPT
+
+      - name: Build ArmVirtQemu (AARCH64)
+        if: always()
+        run: docker compose run edk2-build
+        env:
+          EDK2_BUILD_CMD: build -p ArmVirtPkg/ArmVirtQemu.dsc -t CLANGDWARF -a AARCH64 -b RELEASE -b DEBUG -b NOOPT
+
+      - name: Prepare artifacts with firmwares
+        if: always()
+        run: |
+          IFS=', ' read -r -a TARGETS <<< "$TARGETS"
+          IFS=', ' read -r -a ARCHS <<< "$ARCHS"
+          for target in "${TARGETS[@]}"; do
+            for arch in "${ARCHS[@]}"; do
+              mkdir -p ./firmware_artifacts/ArmVirtQemu/"$arch"/"$target"_"$TOOLCHAIN"
+              cp ./audk/Build/ArmVirtQemu-"$arch"/"$target"_"$TOOLCHAIN"/FV/QEMU_EFI.fd ./firmware_artifacts/ArmVirtQemu/"$arch"/"$target"_"$TOOLCHAIN"/FW.fd
+              done
+          done
+        env:
+          ARCHS: ARM,AARCH64
+          TARGETS: RELEASE,DEBUG,NOOPT
+          TOOLCHAIN: CLANGDWARF
+
+      - name: Prepare artifacts with images
+        if: always()
+        run: |
+          IFS=', ' read -r -a TARGETS <<< "$TARGETS"
+          IFS=', ' read -r -a ARCHS <<< "$ARCHS"
+          for target in "${TARGETS[@]}"; do
+            for arch in "${ARCHS[@]}"; do
+              mkdir -p ./image_artifacts/ArmVirtQemu/"$target"_"$TOOLCHAIN"/"$arch"/
+              cp ./audk/Build/ArmVirtQemu-"$arch"/"$target"_"$TOOLCHAIN"/"$arch"/*.efi ./image_artifacts/ArmVirtQemu/"$target"_"$TOOLCHAIN"/"$arch"/
+              done
+          done
+        env:
+          ARCHS: ARM,AARCH64
+          TARGETS: RELEASE,DEBUG,NOOPT
+          TOOLCHAIN: CLANGDWARF
+
+      - name: Zip artifacts
+        run: |
+          mkdir Binaries/
+          zip Binaries/CLANGDWARF_fw_arm_artifacts.zip ./firmware_artifacts/* -r
+          zip Binaries/CLANGDWARF_img_arm_artifacts.zip ./image_artifacts/* -r
+
+      - name: Upload firmware to Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: CLANGDWARF Firmware ARM Artifacts
+          path: Binaries/CLANGDWARF_fw_arm_artifacts.zip
+
+      - name: Upload images to Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: CLANGDWARF Image ARM Artifacts
+          path: Binaries/CLANGDWARF_img_arm_artifacts.zip
+
+      - name: Upload to Release
+        if: github.event_name == 'release'
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: Binaries/*
+          tag: ${{ github.ref }}
+          file_glob: true
+
+  test-firmwares:
+    name: Test
+    runs-on: ubuntu-22.04
+    needs: [build-linux-gcc5, build-linux-clangdwarf]
+
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [
+          {name: "ArmVirtQemu", archs: "ARM,AARCH64", toolchain: "GCC5", targets: "RELEASE,DEBUG,NOOPT"},
+          {name: "ArmVirtQemu", archs: "ARM,AARCH64", toolchain: "CLANGDWARF", targets: "RELEASE,DEBUG,NOOPT"},
+        ]
+    steps:
+      # FIXME:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Use Docker in rootless mode.
+        uses: ScribeMD/rootless-docker@0.2.2
+
+      - name: Download ue-dev Docker Image
+        uses: robinraju/release-downloader@v1.7
+        with:
+          repository: "mhaeuser/MastersThesis"
+          tag: "ue-dev-release"
+          fileName: "ue-dev.tar.xz"
+
+      - name: Set up ue-dev Docker Image
+        run: |
+          docker load -i ue-dev.tar.xz
+          rm -f ue-dev.tar.xz
+
+      - name: Download a single artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: ${{ matrix.package.toolchain }} Firmware ARM Artifacts
+
+      - name: Unzip artifacts
+        run: unzip "$TOOLCHAIN"_fw_arm_artifacts.zip
+        env:
+          TOOLCHAIN: ${{ matrix.package.toolchain }}
+
+      - name: Downloading Windows PE AARCH64 iso
+        uses: robinraju/release-downloader@v1.7
+        with:
+          repository: "acidanthera/OcBinaryData"
+          tag: "images-winpe-1.0"
+          fileName: "winpe_AARCH64.iso"
+
+      - name: Run TestConsole
+        if: always()
+        run: docker compose run edk2-test
+        env:
+          EDK2_TEST_CMD: ./Scripts/test_console.sh
+          PACKAGE: ${{ matrix.package.name }}
+          ARCHS: ${{ matrix.package.archs }}
+          TARGETS: ${{ matrix.package.targets }}
+          TOOLCHAIN: ${{ matrix.package.toolchain }}
+
+      - name: Run TestLinux
+        if: always()
+        run: docker compose run edk2-test
+        env:
+          EDK2_TEST_CMD: ./Scripts/test_linux.sh
+          PACKAGE: ${{ matrix.package.name }}
+          ARCHS: ${{ matrix.package.archs }}
+          TARGETS: ${{ matrix.package.targets }}
+          TOOLCHAIN: ${{ matrix.package.toolchain }}
+
+      - name: Run Windows PE
+        if: always()
+        run: docker compose run edk2-test
+        env:
+          EDK2_TEST_CMD: ./Scripts/test_windows.sh
+          PACKAGE: ${{ matrix.package.name }}
+          ARCHS: ${{ matrix.package.archs }}
+          TARGETS: ${{ matrix.package.targets }}
+          TOOLCHAIN: ${{ matrix.package.toolchain }}

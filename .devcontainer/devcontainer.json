@@ -1,0 +1,12 @@
+//
+// Copyright (c) 2023 Marvin Häuser. All rights reserved.<BR>
+// SPDX-License-Identifier: BSD-2-Clause-Patent
+//
+
+{
+  "name": "ue-dev",
+  "image": "ue-dev",
+  "runArgs": ["--platform=linux/amd64"],
+  "workspaceMount": "source=${localWorkspaceFolder},target=/com.docker.devenvironments.code,type=bind,consistency=cached",
+  "workspaceFolder": "/com.docker.devenvironments.code"
+}
