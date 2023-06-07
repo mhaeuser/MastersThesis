@@ -1,0 +1,9 @@
+#
+# Copyright (c) 2023 Marvin Häuser. All rights reserved.<BR>
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+
+name: "CodeQL config"
+
+queries:
+  - uses: security-and-quality

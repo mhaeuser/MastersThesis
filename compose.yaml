@@ -1,0 +1,56 @@
+#
+# Copyright (c) 2023 Marvin Häuser. All rights reserved.<BR>
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+
+name: ue_test
+services:
+  ue-base:
+    image: ue-dev
+    volumes:
+      - ${PWD}:/com.docker.devenvironments.code
+    working_dir: /com.docker.devenvironments.code
+  gen-coverage:
+    extends: ue-base
+    environment:
+      - COV_TOOL
+    entrypoint:
+      - /bin/bash
+      - -c
+      - "COVERAGE=1 DEBUG=1 make -C ${COV_TOOL}/ coverage"
+  coverity-scan:
+    extends: ue-base
+    environment:
+      - GITHUB_REPOSITORY
+      - COVERITY_SCAN_TOKEN
+      - COVERITY_SCAN_EMAIL
+      - COVERITY_RESULTS_DIR
+      - COVERITY_RESULTS_FILE
+      - ANALYSIS_BUILD_COMMAND
+      - GITHUB_SHA
+    entrypoint:
+      - /bin/bash
+      - -c
+      - "./Scripts/coverity_build.sh"
+  clang-scan:
+    extends: ue-base
+    environment:
+      - ANALYSIS_BUILD_COMMAND
+    entrypoint:
+      - /bin/bash
+      - -c
+      - "scan-build -o scan-build-report/ ${ANALYSIS_BUILD_COMMAND}"
+  codeql:
+    extends: ue-base
+    environment:
+      - ANALYSIS_BUILD_COMMAND
+    entrypoint:
+      - /bin/bash
+      - -c
+      - "./Scripts/codeql_build.sh"
+  pe-to-ue:
+    extends: ue-base
+    entrypoint:
+      - /bin/bash
+      - -c
+      - "make -j -C audk/BaseTools/ImageTool/ && python3 Scripts/PeToUe.py image_artifacts/ Results/"

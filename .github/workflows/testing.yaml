@@ -1,0 +1,340 @@
+#
+# Copyright (c) 2023 Marvin Häuser. All rights reserved.<BR>
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+
+name: UE Testing
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+  coverity-scan:
+    name: Coverity Scan
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Set up Coverity Build Tool
+        run: |
+          curl -LfsS https://scan.coverity.com/download/cxx/linux64 -d "token=${COVERITY_SCAN_TOKEN}&project=mhaeuser/MastersThesis" -o cov-analysis-linux64.tar.gz
+          tar -xzf cov-analysis-linux64.tar.gz
+          rm -f cov-analysis-linux64.tar.gz
+          mv cov-analysis-linux64-*/ cov-analysis-linux64/
+        env:
+          COVERITY_SCAN_TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
+
+      - name: Use Docker in rootless mode.
+        uses: ScribeMD/rootless-docker@0.2.2
+
+      - name: Download ue-dev Docker Image
+        uses: robinraju/release-downloader@v1.7
+        with:
+          repository: "mhaeuser/MastersThesis"
+          tag: "ue-dev-release"
+          fileName: "ue-dev.tar.xz"
+
+      - name: Set up ue-dev Docker Image
+        run: |
+          docker load -i ue-dev.tar.xz
+          rm -f ue-dev.tar.xz
+
+      - name: Run Coverity Scan
+        run: |
+          docker compose run coverity-scan
+          ./Scripts/coverity_upload.sh
+        env:
+          GITHUB_REPOSITORY: mhaeuser-mastersthesis
+          COVERITY_SCAN_TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
+          COVERITY_SCAN_EMAIL: ${{ secrets.COVERITY_SCAN_EMAIL }}
+          COVERITY_RESULTS_DIR: ./cov-int/
+          COVERITY_RESULTS_FILE: coverity_report.tgz
+          ANALYSIS_BUILD_COMMAND: make -j -C audk/BaseTools/ImageTool
+
+      - name: Upload to Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: Coverity Scan Report
+          path: coverity_report.tgz
+      - name: Upload to Release
+        if: github.event_name == 'release'
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: coverity_report.tgz
+          tag: ${{ github.ref }}
+  clang-scan:
+    name: Clang Static Analyzer
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Use Docker in rootless mode.
+        uses: ScribeMD/rootless-docker@0.2.2
+
+      - name: Download ue-dev Docker Image
+        uses: robinraju/release-downloader@v1.7
+        with:
+          repository: "mhaeuser/MastersThesis"
+          tag: "ue-dev-release"
+          fileName: "ue-dev.tar.xz"
+
+      - name: Set up ue-dev Docker Image
+        run: |
+          docker load -i ue-dev.tar.xz
+          rm -f ue-dev.tar.xz
+
+      - name: Generate Clang Static Analyzer Report
+        run: |
+          docker compose run clang-scan
+        env:
+          ANALYSIS_BUILD_COMMAND: make -j -C audk/BaseTools/ImageTool
+
+      - name: Zip artifacts
+        run: zip clang_scan_report.zip ./scan-build-report/* -r
+  
+      - name: Upload to Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: Clang Static Analyzer Report
+          path: clang_scan_report.zip
+      - name: Upload to Release
+        if: github.event_name == 'release'
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: clang_scan_report.zip
+          tag: ${{ github.ref }}
+  codeql-analysis:
+    name: CodeQL Analysis
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        submodules: recursive
+
+    - name: Use Docker in rootless mode.
+      uses: ScribeMD/rootless-docker@0.2.2
+
+    - name: Download ue-dev Docker Image
+      uses: robinraju/release-downloader@v1.7
+      with:
+        repository: "mhaeuser/MastersThesis"
+        tag: "ue-dev-release"
+        fileName: "ue-dev.tar.xz"
+
+    - name: Set up ue-dev Docker Image
+      run: |
+        docker load -i ue-dev.tar.xz
+        rm -f ue-dev.tar.xz
+
+    - name: Initialize CodeQL
+      run: |
+        wget https://github.com/github/codeql-action/releases/download/codeql-bundle-20230524/codeql-bundle-linux64.tar.gz
+        tar -xvzf ./codeql-bundle-linux64.tar.gz
+        rm -f ./codeql-bundle-linux64.tar.gz
+
+    - name: Run CodeQL Analysis
+      run: docker compose run codeql
+      env:
+        ANALYSIS_BUILD_COMMAND: make -j -C BaseTools/ImageTool
+
+    - name: Zip artifacts
+      run: zip codeql_report.zip ./codeql-sarifs/* -r
+
+    - name: Upload to Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: CodeQL Analysis Report
+        path: codeql_report.zip
+    - name: Upload to Release
+      if: github.event_name == 'release'
+      uses: svenstaro/upload-release-action@v2
+      with:
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file: codeql_report.zip
+        tag: ${{ github.ref }}
+
+    - name: Upload CodeQL Report to GitHub
+      run: ./Scripts/codeql_upload.sh
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  gen-coverage-emit:
+    name: TestEmit Coverage Report
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Use Docker in rootless mode.
+        uses: ScribeMD/rootless-docker@0.2.2
+
+      - name: Download ue-dev Docker Image
+        uses: robinraju/release-downloader@v1.7
+        with:
+          repository: "mhaeuser/MastersThesis"
+          tag: "ue-dev-release"
+          fileName: "ue-dev.tar.xz"
+
+      - name: Set up ue-dev Docker Image
+        run: |
+          docker load -i ue-dev.tar.xz
+          rm -f ue-dev.tar.xz
+
+      - name: Generate TestEmit Coverage Report
+        run: docker compose run gen-coverage
+        env:
+          COV_TOOL: TestEmit
+
+      - name: Zip artifacts
+        run: zip TestEmit_coverage.zip ./TestEmit/COVERAGE/* -r
+
+      - name: Upload to Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: TestEmit Coverage Report
+          path: TestEmit_coverage.zip
+      - name: Upload to Release
+        if: github.event_name == 'release'
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: TestEmit_coverage.zip
+          tag: ${{ github.ref }}
+  gen-coverage-ue:
+    name: TestUe Coverage Report
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Use Docker in rootless mode.
+        uses: ScribeMD/rootless-docker@0.2.2
+
+      - name: Download ue-dev Docker Image
+        uses: robinraju/release-downloader@v1.7
+        with:
+          repository: "mhaeuser/MastersThesis"
+          tag: "ue-dev-release"
+          fileName: "ue-dev.tar.xz"
+
+      - name: Set up ue-dev Docker Image
+        run: |
+          docker load -i ue-dev.tar.xz
+          rm -f ue-dev.tar.xz
+
+      - name: Generate TestUe Coverage Report
+        run: docker compose run gen-coverage
+        env:
+          COV_TOOL: TestUe
+
+      - name: Zip artifacts
+        run: zip TestUe_coverage.zip ./TestUe/COVERAGE/* -r
+
+      - name: Upload to Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: TestUe Coverage Report
+          path: TestUe_coverage.zip
+      - name: Upload to Release
+        if: github.event_name == 'release'
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: TestUe_coverage.zip
+          tag: ${{ github.ref }}
+  gen-conversion:
+    name: Pe-to-UE Conversion
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Download CLANGDWARF Image ARM Artifacts
+        uses: robinraju/release-downloader@v1.7
+        with:
+          repository: "mhaeuser/MastersThesis"
+          tag: "audk-build-release"
+          fileName: "CLANGDWARF_img_arm_artifacts.zip"
+
+      - name: Download CLANGDWARF Image X86 Artifacts
+        uses: robinraju/release-downloader@v1.7
+        with:
+          repository: "mhaeuser/MastersThesis"
+          tag: "audk-build-release"
+          fileName: "CLANGDWARF_img_x86_artifacts.zip"
+
+      - name: Download CLANGPDB Image X86 Artifacts
+        uses: robinraju/release-downloader@v1.7
+        with:
+          repository: "mhaeuser/MastersThesis"
+          tag: "audk-build-release"
+          fileName: "CLANGPDB_img_x86_artifacts.zip"
+
+      - name: Download GCC Image ARM Artifacts
+        uses: robinraju/release-downloader@v1.7
+        with:
+          repository: "mhaeuser/MastersThesis"
+          tag: "audk-build-release"
+          fileName: "GCC5_img_x86_artifacts.zip"
+
+      - name: Download GCC Image X86 Artifacts
+        uses: robinraju/release-downloader@v1.7
+        with:
+          repository: "mhaeuser/MastersThesis"
+          tag: "audk-build-release"
+          fileName: "GCC5_img_arm_artifacts.zip"
+
+      - name: Unzip artifacts
+        run: |
+          unzip -u CLANGDWARF_img_arm_artifacts.zip && rm -f CLANGDWARF_img_arm_artifacts.zip
+          unzip -u CLANGDWARF_img_x86_artifacts.zip && rm -f CLANGDWARF_img_x86_artifacts.zip
+          unzip -u CLANGPDB_img_x86_artifacts.zip && rm -f CLANGPDB_img_x86_artifacts.zip
+          unzip -u GCC5_img_arm_artifacts.zip && rm -f GCC5_img_arm_artifacts.zip
+          unzip -u GCC5_img_x86_artifacts.zip && rm -f GCC5_img_x86_artifacts.zip
+
+      - name: Use Docker in rootless mode.
+        uses: ScribeMD/rootless-docker@0.2.2
+
+      - name: Download ue-dev Docker Image
+        uses: robinraju/release-downloader@v1.7
+        with:
+          repository: "mhaeuser/MastersThesis"
+          tag: "ue-dev-release"
+          fileName: "ue-dev.tar.xz"
+
+      - name: Set up ue-dev Docker Image
+        run: |
+          docker load -i ue-dev.tar.xz
+          rm -f ue-dev.tar.xz
+
+      - name: Perform PE-to-UE Conversion
+        run: docker compose run pe-to-ue
+
+      - name: Zip artifacts
+        run: zip PeToUe_results.zip ./Results/* -r
+
+      - name: Upload to Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: PE-to-UE Conversion Results
+          path: PeToUe_results.zip
+      - name: Upload to Release
+        if: github.event_name == 'release'
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: PeToUe_results.zip
+          tag: ${{ github.ref }}

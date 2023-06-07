@@ -1,0 +1,12 @@
+*.d
+*.o
+*.obj
+*.pdb
+*.ilk
+*.exe
+*.pyc
+*/crash-*
+*/slow-unit-*
+*/fuzz-*.log
+TestEmit/Emit
+TestUe/Ue
