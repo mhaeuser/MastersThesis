@@ -1,0 +1,16 @@
+#
+# Copyright (c) 2023 Marvin Häuser. All rights reserved.<BR>
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+
+name: qemu-build
+services:
+  qemu-build:
+    build:
+      context: Dockerfiles/qemu-build/repro
+    volumes:
+      - ${PWD}:/com.docker.devenvironments.code
+    entrypoint:
+      - /bin/bash
+      - -c
+      - "cp qemu-8.0.2-bin.tar.xz /com.docker.devenvironments.code/"

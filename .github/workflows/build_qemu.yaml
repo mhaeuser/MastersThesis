@@ -1,0 +1,39 @@
+#
+# Copyright (c) 2023 Marvin Häuser. All rights reserved.<BR>
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+
+name: Build QEMU 8.0.2
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+  build-qemu:
+    name: Build QEMU 8.0.2
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Use Docker in rootless mode.
+        uses: ScribeMD/rootless-docker@0.2.2
+
+      - name: Build QEMU 8.0.2
+        run: docker compose run qemu-build
+
+      - name: Upload to Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: QEMU 8.0.2 Artifacts
+          path: qemu-8.0.2-bin.tar.xz
+      - name: Upload to Release
+        if: github.event_name == 'release'
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: qemu-8.0.2-bin.tar.xz
+          tag: ${{ github.ref }}
