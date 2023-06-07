@@ -1,0 +1,42 @@
+#
+# Copyright (c) 2023 Marvin Häuser. All rights reserved.<BR>
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+
+name: Build ue-dev Docker Image
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+jobs:
+  build-ue-dev-img:
+    name: Build ue-dev Docker Image
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Use Docker in rootless mode.
+        uses: ScribeMD/rootless-docker@0.2.2
+
+      - name: Build ue-dev Docker Image
+        run: docker build -t ue-dev Dockerfiles/ue-dev/repro
+
+      - name: Save ue-dev Docker Image
+        run: docker save ue-dev | xz -zc - > ue-dev.tar.xz
+
+      - name: Upload to Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ue-dev Docker Image Artifacts
+          path: ue-dev.tar.xz
+      - name: Upload to Release
+        if: github.event_name == 'release'
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ue-dev.tar.xz
+          tag: ${{ github.ref }}
