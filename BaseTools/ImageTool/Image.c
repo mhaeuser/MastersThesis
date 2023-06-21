@@ -149,12 +149,14 @@ ToolImageGetRelocSize (
     {
       return sizeof (UINT64);
     }
-    
+
+#if 0
     case EFI_IMAGE_REL_BASED_ARM_MOV32T:
     {
       return sizeof (UINT32);
     }
-    
+#endif
+
     default:
     {
       return 0;
@@ -173,8 +175,11 @@ CheckToolImageReloc (
   uint32_t                   RelocOffset;
   uint32_t                   RemainingSize;
   const image_tool_segment_t *Segment;
+
+#if 0
   uint16_t                   MovHigh;
   uint16_t                   MovLow;
+#endif
 
   RelocOffset = Reloc->Target;
   Segment     = ImageGetSegmentByAddress (
@@ -192,6 +197,7 @@ CheckToolImageReloc (
     return false;
   }
 
+#if 0
   if (Reloc->Type == EFI_IMAGE_REL_BASED_ARM_MOV32T) {
     if (!IS_ALIGNED (Reloc->Target, ALIGNOF (UINT16))) {
       DEBUG_RAISE ();
@@ -206,6 +212,7 @@ CheckToolImageReloc (
       return false;
     }
   }
+#endif
 
   // FIXME: Update drivers?
   if ((Image->HeaderInfo.Subsystem == EFI_IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER ||
@@ -460,7 +467,8 @@ ToolImageRelocate (
         WriteUnaligned64 ((VOID *)&Segment->Data[RelocOffset], RelocTarget64);
         break;
       }
-      
+
+#if 0
       case EFI_IMAGE_REL_BASED_ARM_MOV32T:
       {
         assert (RemainingSize >= sizeof (UINT32));
@@ -469,7 +477,8 @@ ToolImageRelocate (
         PeCoffThumbMovwMovtImmediateFixup (&Segment->Data[RelocOffset], Adjust);
         break;
       }
-      
+#endif
+
       default:
       {
         assert (false);
