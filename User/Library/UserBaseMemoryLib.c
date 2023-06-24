@@ -32,10 +32,10 @@ STATIC UINTN  mPoolAllocationSizeLimit = BASE_512MB;
 GLOBAL_REMOVE_IF_UNREFERENCED UINTN  mPoolAllocations;
 GLOBAL_REMOVE_IF_UNREFERENCED UINTN  mPageAllocations;
 
-STATIC UINT64  mPoolAllocationMask = MAX_UINT64;
-STATIC UINTN   mPoolAllocationIndex;
-STATIC UINT64  mPageAllocationMask = MAX_UINT64;
-STATIC UINTN   mPageAllocationIndex;
+STATIC UINT16  mPoolAllocationMask = MAX_UINT16;
+STATIC UINT16  mPoolAllocationIndex;
+STATIC UINT16  mPageAllocationMask = MAX_UINT16;
+STATIC UINT16  mPageAllocationIndex;
 
 VOID
 ConfigureMemoryAllocations (
@@ -49,16 +49,22 @@ ConfigureMemoryAllocations (
 
   if (Size - *ConfigSize >= sizeof (UINT64)) {
     *ConfigSize += sizeof (UINT64);
-    CopyMem (&mPoolAllocationMask, &Data[Size - *ConfigSize], sizeof (UINT64));
+    CopyMem (&mPoolAllocationMask, &Data[Size - *ConfigSize], sizeof (UINT16));
+    if (mPoolAllocationMask == 0) {
+      mPoolAllocationMask = 1;
+    }
   } else {
-    mPoolAllocationMask = MAX_UINT64;
+    mPoolAllocationMask = MAX_UINT16;
   }
 
   if (Size - *ConfigSize >= sizeof (UINT64)) {
     *ConfigSize += sizeof (UINT64);
-    CopyMem (&mPageAllocationMask, &Data[Size - *ConfigSize], sizeof (UINT64));
+    CopyMem (&mPageAllocationMask, &Data[Size - *ConfigSize], sizeof (UINT16));
+    if (mPageAllocationMask == 0) {
+      mPageAllocationMask = 1;
+    }
   } else {
-    mPageAllocationMask = MAX_UINT64;
+    mPageAllocationMask = MAX_UINT16;
   }
 }
 
@@ -210,7 +216,8 @@ PhaseAllocatePool (
   Buffer                  = NULL;
   RequestedAllocationSize = 0;
 
-  if (((mPoolAllocationMask & (1ULL << mPoolAllocationIndex)) != 0) && (AllocationSize + 7ULL > AllocationSize)) {
+  // FIXME: Make mask- vs modulo-based fault injection configurable.
+  if ((mPoolAllocationIndex % mPoolAllocationMask != mPoolAllocationMask - 1) && (AllocationSize + 7ULL > AllocationSize)) {
     //
     // UEFI guarantees 8-byte alignment.
     //
@@ -231,7 +238,6 @@ PhaseAllocatePool (
   }
 
   ++mPoolAllocationIndex;
-  mPoolAllocationIndex &= 63ULL;
 
   DEBUG ((
     DEBUG_POOL,
@@ -267,7 +273,8 @@ InternalAllocatePagesAlign (
   Buffer                  = NULL;
   RequestedAllocationSize = Pages * EFI_PAGE_SIZE;
 
-  if (((mPageAllocationMask & (1ULL << mPageAllocationIndex)) != 0) &&
+  // FIXME: Make mask- vs modulo-based fault injection configurable.
+  if ((mPageAllocationIndex % mPageAllocationMask != mPageAllocationMask - 1) &&
       ((Pages != 0) && (RequestedAllocationSize / Pages == EFI_PAGE_SIZE)))
   {
     //
@@ -295,7 +302,6 @@ InternalAllocatePagesAlign (
   }
 
   ++mPageAllocationIndex;
-  mPageAllocationIndex &= 63U;
 
   DEBUG ((
     DEBUG_PAGE,
