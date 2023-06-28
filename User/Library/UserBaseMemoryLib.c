@@ -62,6 +62,22 @@ ConfigureMemoryAllocations (
   }
 }
 
+UINT16
+GetNumPoolAllocations (
+  VOID
+  )
+{
+  return mPoolAllocationIndex;
+}
+
+UINT16
+GetNumPageAllocations (
+  VOID
+  )
+{
+  return mPageAllocationIndex;
+}
+
 VOID
 SetPoolAllocationSizeLimit (
   UINTN  AllocationSize

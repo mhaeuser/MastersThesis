@@ -16,6 +16,16 @@ ConfigureMemoryAllocations (
   IN OUT UINT32       *ConfigSize
   );
 
+UINT16
+GetNumPoolAllocations (
+  VOID
+  );
+
+UINT16
+GetNumPageAllocations (
+  VOID
+  );
+
 VOID
 SetPoolAllocationSizeLimit (
   UINTN  AllocationSize
