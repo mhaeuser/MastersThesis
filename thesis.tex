@@ -1,0 +1,201 @@
+\documentclass[
+	bibliography=totoc, % Add the bibliography to the TOC
+	listof=totoc,      % Add the "List of *" to the TOC
+	%final              % Set document status as FINAL
+	%draft              % Set document status as DRAFT: Faster, skips some stuff (e.g. referencing)
+]{scrbook}              % scrbook defaults: a4paper, twoside, openright, 11pt
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Input encoding: UTF8
+\usepackage[utf8]{inputenc}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Requirements
+
+% TIKZ
+\usepackage{tikz}
+    \usetikzlibrary{external} % Externalizes Tikz graphics - speeds up compilation if unchanged.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Page Geometry Layout
+
+\usepackage[
+        a4paper,
+        top=35mm,
+        bottom=40mm,
+        inner=35mm,
+        outer=40mm,
+        bindingoffset=5mm,
+        marginparsep=5mm,
+        marginparwidth=40mm,
+        %showframe  % Can be enabled to debug the page geometry
+    ]{geometry}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Header & Footer
+
+\usepackage[
+        headsepline,
+        footsepline,
+        draft=false     % Draft mode adds "ruler" instead of header/footer, we never want that!
+    ]{scrlayer-scrpage}
+
+% Style
+\renewcommand*{\chaptermarkformat}{\chapapp~\thechapter:\enskip}% Put "chapter" oder "appendix" in front of the chapter number in running head
+\clearpairofpagestyles
+\ohead{\headmark}
+\automark[chapter]{chapter}
+\automark*[section]{}
+\ofoot*{\pagemark}
+\pagestyle{scrheadings}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Captions for Figures
+
+\usepackage[
+        font={normal,small,sl,color=black!80},
+        labelfont={normal,bf}
+    ]{caption}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
+% PDF Links 
+
+\usepackage[
+        bookmarksdepth=3,   % bookmark levels in the PDF.
+        bookmarksnumbered   % Show section numbering in bookmark
+    ]{hyperref}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Bibliography / Citing
+
+\usepackage[
+        backend=biber,
+        style=alphabetic,
+        minnames=4,
+        maxnames=10
+    ]{biblatex}
+
+% Cititation References
+\addbibresource{references.bib}
+
+% Citation style
+%\DeclareFieldFormat{labelalpha}{\thefield{entrykey}}
+%\DeclareFieldFormat{extraalpha}{}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Content Stuff
+
+\usepackage{blindtext} % Blind Text: Lorem ipsum....
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% --------------------------------------------------------------------------- %
+% --------------------------------------------------------------------------- %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+% Variables, Commands, Macros
+
+\input{variables.tex}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Set PDF attributes %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\makeatletter
+\hypersetup{
+    pdftitle = {\@title},
+    pdfauthor= {\@author}
+}
+\makeatother
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% --------------------------------------------------------------------------- %
+% -MAIN DOCUMENT------------------------------------------------------------- %
+% --------------------------------------------------------------------------- %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\frontmatter
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Titlepage %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newgeometry{margin=1in}
+\begin{titlepage}
+    \makeatletter
+        \centering
+        \includegraphics[width=7cm]{RPTU-Logo-RGB} \par \vspace*{\fill}
+        {\scshape\LARGE \@title} \par \vspace*{\fill}
+        {\bfseries \thesisType's Thesis} \par\vspace{1cm}
+        {von} \par\vspace{1cm}
+        {\Large\itshape \@author} \par\vspace{1cm}
+        {\@date} \par\vspace*{\fill}
+        {Rheinland-Pfälzische Technische Universität Kaiserslautern-Landau,\\
+        Fachbereich Informatik\\
+        67663 Kaiserslautern,\\
+        Deutschland} \par\vspace*{\fill}
+        {
+        \begin{tabular}{rl}
+        Examiner: & \examinerA\\
+        		  & \examinerB
+        \end{tabular}
+        }
+    \makeatother
+\end{titlepage}
+\restoregeometry
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Authorship statement
+
+\section*{Eigenständigkeitserklärung}
+
+Hiermit versichere ich, dass ich die von mir vorgelegte Arbeit mit dem Thema ``\makeatletter\@title\makeatother'' selbstständig verfasst habe, dass ich die verwendeten Quellen und Hilfsmittel vollständig angegeben habe und dass ich die Stellen der Arbeit - einschließlich Tabellen und Abbildungen -, die anderen Werken oder dem Internet im Wortlaut oder dem Sinn nach entnommen sind unter Angabe der Quelle als Entlehnung kenntlich gemacht habe.
+
+\vspace{0.5cm}
+
+Kaiserslautern, den \the\day.\the\month.\the\year
+
+\vspace{2cm}
+
+\begin{tabular}{@{}l@{}}\hline
+\makeatletter\@author\makeatother
+\end{tabular}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Abstract
+
+\include{abstract}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Table of Contents %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\cleardoublepage                    % Open right (req. for bookmark)
+\pdfbookmark[0]{\contentsname}{toc} % Add TOC to PDF bookmarks
+\tableofcontents                    % Print TOC
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% List of Algorithms / Figures / ... %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\listoffigures
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Content %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\mainmatter
+\input{main.tex}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Biliography %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\printbibliography
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Appendix %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\input{appendix}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\end{document}
