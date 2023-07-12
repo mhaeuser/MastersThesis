@@ -1,24 +1,16 @@
-
-\clearpage
+\cleardoublepage
 \pdfbookmark{Abstract}{Abstract}
-\section*{Abstract}
+\chapter*{Abstract}
 
+\saveparinfos
 \begin{center}
-\begin{minipage}[t]{0.7\textwidth}
-	\blindtext[2]
-\end{minipage}
+  \begin{minipage}[t]{0.7\textwidth}
+    \useparinfo
+
+    \noindent\Glspl{executable-file} and \glspl{library} are at the core of operating systems and \gls{firmware} implementations based on the \glsxtrshort{UEFI-PI} and \glsxtrshort{UEFI} specifications, both functionally and security-wise. However, the \glsxtrshort{UEFI-PI} and \glsxtrshort{UEFI} reference implementation \glsxtrshort{EDK2} has been subject to various reliability, maintainability, and security issues related to its \glsxtrshort{PE} \gls{image-file-loader}. While many of the issues can be attributed to human error during development, the \glsxtrshort{PE} format and its associated \gls{authcode} \gls{digital-signature} scheme add a great deal of complexity in their own right. Attempts to make the \glsxtrshort{EDK2} \glsxtrshort{PE} \gls{image-file-loader} more secure have been successful, but maintenance and validation remain difficult. At the same time, there have been various problems with the \glsxtrshort{TE} format specified by the \glsxtrshort{UEFI-PI} specification, which is a stripped-down variant of the \glsxtrshort{PE} format aimed at saving space on the \gls{firmware} storage. Not only is it subject to its own set of design problems, but the format also does not leverage the full potential for space-saving.
+
+    We propose a novel \gls{executable-file} format, accompanied by a trivial \gls{digital-signature} scheme. Both help reduce the complexity of parsing and validation, while also encoding metadata much more efficiently than the \glsxtrshort{PE} and the \glsxtrshort{TE} formats. They are specifically designed for \glsxtrshort{UEFI} \gls{firmware} implementations and are explicitly not optimized for the needs of modern operating systems. Compared to existing alternatives such as \glsxtrshort{ELF} and the \glsxtrshort{MACHO} format, the proposed alternative makes extensive use of encoding techniques to impose certain constraints on the metadata, reducing the need for conformance validation.
+  \end{minipage}
 \end{center}
 
 \vfill
-
-\section*{Zusammenfassung}
-
-\begin{center}
-\begin{minipage}[t]{0.7\textwidth}
-	\blindtext[2]
-\end{minipage}
-\end{center}
-
-\vfill
-
-\thispagestyle{empty}

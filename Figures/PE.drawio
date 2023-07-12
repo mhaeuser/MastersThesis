@@ -1,0 +1,43 @@
+<mxfile host="app.diagrams.net" modified="2023-07-14T12:06:34.253Z" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5.1 Safari/605.1.15" etag="40M_rXtuPfbj-6FFM09k" version="21.6.2" type="device">
+  <diagram id="hnu7B3zys1fS2eFsURdc" name="Page-1">
+    <mxGraphModel dx="677" dy="1046" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="j9QwdKj93-wbxiv0UilQ-18" value="&lt;font style=&quot;font-size: 16px;&quot; face=&quot;LMRoman10-Regular&quot;&gt;MS-DOS Stub&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="360" y="240" width="200" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="j9QwdKj93-wbxiv0UilQ-19" value="&lt;font style=&quot;font-size: 16px;&quot; face=&quot;LMRoman10-Regular&quot;&gt;COFF File Header&lt;br&gt;&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=default;fillStyle=auto;gradientColor=none;" parent="1" vertex="1">
+          <mxGeometry x="360" y="300" width="200" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="j9QwdKj93-wbxiv0UilQ-20" value="&lt;font style=&quot;font-size: 16px;&quot; face=&quot;LMRoman10-Regular&quot;&gt;Section Headers&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="360" y="360" width="200" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="j9QwdKj93-wbxiv0UilQ-21" value="&lt;font style=&quot;font-size: 16px;&quot; face=&quot;LMRoman10-Regular&quot;&gt;.text Section&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="360" y="390" width="200" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="j9QwdKj93-wbxiv0UilQ-24" value="&lt;font style=&quot;font-size: 16px;&quot; face=&quot;LMRoman10-Regular&quot;&gt;Attribute Certificate Table&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;" parent="1" vertex="1">
+          <mxGeometry x="360" y="510" width="200" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="j9QwdKj93-wbxiv0UilQ-25" value="&lt;font style=&quot;font-size: 16px;&quot; face=&quot;LMRoman10-Regular&quot;&gt;Magic Number&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="360" y="270" width="200" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="j9QwdKj93-wbxiv0UilQ-26" value="&lt;font style=&quot;font-size: 16px;&quot; face=&quot;LMRoman10-Regular&quot;&gt;Optional Header&lt;br&gt;&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;strokeColor=default;fillStyle=auto;gradientColor=none;" parent="1" vertex="1">
+          <mxGeometry x="360" y="330" width="200" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="j9QwdKj93-wbxiv0UilQ-27" value="&lt;font style=&quot;font-size: 16px;&quot; face=&quot;LMRoman10-Regular&quot;&gt;.rdata Section&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="360" y="420" width="200" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="j9QwdKj93-wbxiv0UilQ-30" value="&lt;font style=&quot;font-size: 16px;&quot; face=&quot;LMRoman10-Regular&quot;&gt;.data Section&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="360" y="450" width="200" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="j9QwdKj93-wbxiv0UilQ-31" value="&lt;font style=&quot;font-size: 16px;&quot; face=&quot;LMRoman10-Regular&quot;&gt;.rsrc Section&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="360" y="480" width="200" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="FumWqRtGvjaToRgr0J45-1" value="&lt;b&gt;Portable Executable&lt;/b&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontFamily=LMRoman10-Regular;fontSize=16;fontColor=default;" vertex="1" parent="1">
+          <mxGeometry x="360" y="210" width="200" height="30" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

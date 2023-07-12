@@ -109,6 +109,9 @@ acs-*.bib
 *.glo
 *.gls
 *.glsdefs
+*.glg-abr
+*.glo-abr
+*.gls-abr
 
 # gnuplottex
 *-gnuplottex-*
@@ -257,3 +260,8 @@ TSWLatexianTemp*
 
 # standalone packages
 *.sta
+
+*.frm
+
+/.vscode/
+/Signature.pdf

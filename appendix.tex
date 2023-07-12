@@ -1,9 +1,889 @@
 \appendix
 
-\chapter{My Code}
+\FloatBarrier
+\chapter{Encoding Space Efficiency Analyses}
 
-\blindtext[2]
+This appendix contains sample source code and corresponding machine code. We used the Compiler Explorer\footnote{\url{https://godbolt.org}~(visited on 14/07/2023)} to generate the machine code.
 
-\chapter{My Ideas}
+\FloatBarrier
+\section{Bit Field Encoding Formats}
+\label{sec:enc_formats}
 
-\blindtext[2]
+In this section, we will present machine code generated for different types of bit field decoding. In general, shift-based bit field decoding generates smaller code compared to mask-based bit field decoding. Adjacent flag decoding is well-optimized across compilers and architectures.
+
+\FloatBarrier
+\subsection{Mask-Only Bit Field Decoding}
+\label{sec:mask_dec}
+
+In this section, we will present machine code generated for mask-only bit field decoding.
+
+\begin{lstfloat}[!htb]
+  \centering
+  \caption{Mask-Only Bit Field Decoding.}
+  \label{lst:mask_dec}
+  \begin{lstlisting}[style=c]
+int main(void) {
+  //
+  // Input: An address encoded as follows.
+  // [Bits 11:0]  The offset into the memory page.
+  // [Bits 31:12] The index of the memory page.
+  //
+  volatile unsigned int addr;
+  //
+  // Output: The base address of the memory page.
+  //
+  volatile unsigned int paddr = addr & 0xFFFFF000U;
+  //
+  // Output: The offset into the memory page.
+  //
+  volatile unsigned int poff = addr & 0x00000FFFU;
+  return 0;
+}
+  \end{lstlisting}
+\end{lstfloat}
+
+\begin{lstfloat}[!htb]
+  \centering
+  \caption{Machine Code for \Cref{lst:mask_dec} (x86-64).}
+  \label{lst:mask_dec_x86}
+  \caption*{
+    \begin{tabular}{r l}
+      \textbf{Compiler:} & x64 msvc v19.33\\
+      \textbf{Compiler Options:} & /O2\\
+      \textbf{Code Size:} & 29 \glspl{byte}
+    \end{tabular}
+  }
+  \begin{lstlisting}[style=asm]
+0140001000    mov    eax, DWORD PTR [rsp+0x8]
+0140001004    and    eax, 0xfffff000
+0140001009    mov    DWORD PTR [rsp+0x8], eax
+014000100d    mov    eax, DWORD PTR [rsp+0x8]
+0140001011    and    eax, 0xfff
+0140001016    mov    DWORD PTR [rsp+0x8], eax
+014000101a    xor    eax, eax
+014000101c    ret
+014000101d
+  \end{lstlisting}
+\end{lstfloat}
+
+\begin{lstfloat}[!htb]
+  \centering
+  \caption{Machine Code for \Cref{lst:mask_dec} (ARM64).}
+  \label{lst:mask_dec_arm64}
+  \caption*{
+    \begin{tabular}{r l}
+      \textbf{Compiler:} & ARM64 gcc 12.2\\
+      \textbf{Compiler Options:} & -O3\\
+      \textbf{Code Size:} & 40 \glspl{byte}
+    \end{tabular}
+  }
+  \begin{lstlisting}[style=asm]
+0000400540    sub    sp, sp, #0x10
+0000400544    mov    w0, #0x0
+0000400548    ldr    w1, [sp, #4]
+000040054c    and    w1, w1, #0xfffff000
+0000400550    str    w1, [sp, #8]
+0000400554    ldr    w1, [sp, #4]
+0000400558    and    w1, w1, #0xfff
+000040055c    str    w1, [sp, #12]
+0000400560    add    sp, sp, #0x10
+0000400564    ret
+0000400568
+  \end{lstlisting}
+\end{lstfloat}
+
+\begin{lstfloat}[!htb]
+  \centering
+  \caption{Machine Code for \Cref{lst:mask_dec} (RISC-V).}
+  \label{lst:mask_dec_riscv}
+  \caption*{
+    \begin{tabular}{r l}
+      \textbf{Compiler:} & RISC-V rv64gc clang 15.0.0\\
+      \textbf{Compiler Options:} & -O3\\
+      \textbf{Code Size:} & 28 \glspl{byte}
+    \end{tabular}
+  }
+  \begin{lstlisting}[style=asm]
+0000000684    addi   sp, sp, -16
+0000000686    lwu    a0, 12(sp)
+000000068a    lui    a1, 0xfffff
+000000068c    and    a0, a0, a1
+000000068e    sw     a0, 8(sp)
+0000000690    lwu    a0, 12(sp)
+0000000694    slli   a0, a0, 0x34
+0000000696    srli   a0, a0, 0x34
+0000000698    sw     a0, 4(sp)
+000000069a    li     a0, 0
+000000069c    addi   sp, sp, 16
+000000069e    ret
+00000006a0
+  \end{lstlisting}
+\end{lstfloat}
+
+\FloatBarrier
+\subsection{Shift-Only Bit Field Decoding}
+\label{sec:shift_dec}
+
+In this section, we will present machine code generated for shift-only bit field decoding.
+
+\begin{lstfloat}[!htb]
+  \centering
+  \caption{Shift-Only Bit Field Decoding.}
+  \label{lst:shift_dec}
+  \begin{lstlisting}[style=c]
+int main(void) {
+  //
+  // Input: An address encoded as follows.
+  // [Bits 19:0]  The index of the memory page.
+  // [Bits 31:20] The offset into the memory page.
+  //
+  volatile unsigned int addr;
+  //
+  // Output: The base address of the memory page.
+  //
+  volatile unsigned int paddr = addr << 12U;
+  //
+  // Output: The offset into the memory page.
+  //
+  volatile unsigned int poff = addr >> 20U;
+  return 0;
+}
+  \end{lstlisting}
+\end{lstfloat}
+
+\begin{lstfloat}[!htb]
+  \centering
+  \caption{Machine Code for \Cref{lst:shift_dec} (x86-64).}
+  \label{lst:shift_dec_x86}
+  \caption*{
+    \begin{tabular}{r l}
+      \textbf{Compiler:} & x64 msvc v19.33\\
+      \textbf{Compiler Options:} & /O2\\
+      \textbf{Code Size:} & 25 \glspl{byte}
+    \end{tabular}
+  }
+  \begin{lstlisting}[style=asm]
+0140001000    mov    eax, DWORD PTR [rsp+0x8]
+0140001004    shl    eax, 0xc
+0140001007    mov    DWORD PTR [rsp+0x8], eax
+014000100b    mov    eax, DWORD PTR [rsp+0x8]
+014000100f    shr    eax, 0x14
+0140001012    mov    DWORD PTR [rsp+0x8], eax
+0140001016    xor    eax, eax
+0140001018    ret
+0140001019
+  \end{lstlisting}
+\end{lstfloat}
+
+\begin{lstfloat}[!htb]
+  \centering
+  \caption{Machine Code for \Cref{lst:shift_dec} (ARM64).}
+  \label{lst:shift_dec_arm64}
+  \caption*{
+    \begin{tabular}{r l}
+      \textbf{Compiler:} & ARM64 gcc 12.2\\
+      \textbf{Compiler Options:} & -O3\\
+      \textbf{Code Size:} & 40 \glspl{byte}
+    \end{tabular}
+  }
+  \begin{lstlisting}[style=asm]
+0000400540    sub    sp, sp, #0x10
+0000400544    mov    w0, #0x0
+0000400548    ldr    w1, [sp, #4]
+000040054c    lsl    w1, w1, #12
+0000400550    str    w1, [sp, #8]
+0000400554    ldr    w1, [sp, #4]
+0000400558    lsr    w1, w1, #20
+000040055c    str    w1, [sp, #12]
+0000400560    add    sp, sp, #0x10
+0000400564    ret
+0000400568
+  \end{lstlisting}
+\end{lstfloat}
+
+\begin{lstfloat}[!htb]
+  \centering
+  \caption{Machine Code for \Cref{lst:shift_dec} (RISC-V).}
+  \label{lst:shift_dec_riscv}
+  \caption*{
+    \begin{tabular}{r l}
+      \textbf{Compiler:} & RISC-V rv64gc clang 15.0.0\\
+      \textbf{Compiler Options:} & -O3\\
+      \textbf{Code Size:} & 24 \glspl{byte}
+    \end{tabular}
+  }
+  \begin{lstlisting}[style=asm]
+0000000684    addi   sp, sp, -16
+0000000686    lw     a0, 12(sp)
+0000000688    slliw  a0, a0, 0xc
+000000068c    sw     a0, 8(sp)
+000000068e    lwu    a0, 12(sp)
+0000000692    srli   a0, a0, 0x14
+0000000694    sw     a0, 4(sp)
+0000000696    li     a0, 0
+0000000698    addi   sp, sp, 16
+000000069a    ret
+000000069c
+  \end{lstlisting}
+\end{lstfloat}
+
+\clearpage
+\FloatBarrier
+\subsection{Flag Decoding and Compiler Optimizations}
+\label{sec:flag_dec_opt}
+
+In this section, we will present machine code generated for flag decoding.
+
+\begin{lstfloat}[!htb]
+  \centering
+  \caption{Naive Bit Field Flag Decoding.}
+  \label{lst:ff_dec}
+  \begin{lstlisting}[style=c]
+int main(void) {
+  volatile unsigned int xyz;
+  volatile unsigned int x = (xyz & 0x80000000U) != 0;
+  volatile unsigned int y = (xyz & 0x40000000U) != 0;
+  volatile unsigned int z = (xyz & 0x20000000U) != 0;
+  return 0;
+}
+  \end{lstlisting}
+\end{lstfloat}
+
+\begin{lstfloat}[!htb]
+  \centering
+  \caption{Machine Code for \Cref{lst:ff_dec} (x86-64).}
+  \caption*{
+    \begin{tabular}{r l}
+      \textbf{Compiler:} & x64 msvc v19.33\\
+      \textbf{Compiler Options:} & /O2\\
+      \textbf{Code Size:} & 38 \glspl{byte}
+    \end{tabular}
+  }
+  \begin{lstlisting}[style=asm]
+0000401000    push   ecx
+0000401001    mov    eax, DWORD PTR [esp]
+0000401004    shr    eax, 0x1f
+0000401007    mov    DWORD PTR [esp], eax
+000040100a    mov    eax, DWORD PTR [esp]
+000040100d    shr    eax, 0x1e
+0000401010    and    eax, 0x1
+0000401013    mov    DWORD PTR [esp], eax
+0000401016    mov    eax, DWORD PTR [esp]
+0000401019    shr    eax, 0x1d
+000040101c    and    eax, 0x1
+000040101f    mov    DWORD PTR [esp], eax
+0000401022    xor    eax, eax
+0000401024    pop    ecx
+0000401025    ret
+0000401026
+  \end{lstlisting}
+\end{lstfloat}
+
+\begin{lstfloat}[!htb]
+  \centering
+  \caption{Machine Code for \Cref{lst:ff_dec} (ARM64).}
+  \caption*{
+    \begin{tabular}{r l}
+      \textbf{Compiler:} & ARM64 gcc 12.2\\
+      \textbf{Compiler Options:} & -O3\\
+      \textbf{Code Size:} & 52 \glspl{byte}
+    \end{tabular}
+  }
+  \begin{lstlisting}[style=asm]
+0000400540    sub    sp, sp, #0x10
+0000400544    mov    w0, #0x0
+0000400548    ldr    w1, [sp]
+000040054c    lsr    w1, w1, #31
+0000400550    str    w1, [sp, #4]
+0000400554    ldr    w1, [sp]
+0000400558    ubfx   x1, x1, #30, #1
+000040055c    str    w1, [sp, #8]
+0000400560    ldr    w1, [sp]
+0000400564    ubfx   x1, x1, #29, #1
+0000400568    str    w1, [sp, #12]
+000040056c    add    sp, sp, #0x10
+0000400570    ret
+0000400574
+  \end{lstlisting}
+\end{lstfloat}
+
+\begin{lstfloat}[!htb]
+  \centering
+  \caption{Machine Code for \Cref{lst:ff_dec} (RISC-V).}
+  \caption*{
+    \begin{tabular}{r l}
+      \textbf{Compiler:} & RISC-V rv64gc clang 15.0.0\\
+      \textbf{Compiler Options:} & -O3\\
+      \textbf{Code Size:} & 32 \glspl{byte}
+    \end{tabular}
+  }
+  \begin{lstlisting}[style=asm]
+0000000684    addi   sp, sp, -16
+0000000686    lwu    a0, 12(sp)
+000000068a    srli   a0, a0, 0x1f
+000000068c    sw     a0, 8(sp)
+000000068e    lw     a0, 12(sp)
+0000000690    slli   a0, a0, 0x21
+0000000692    srli   a0, a0, 0x3f
+0000000694    sw     a0, 4(sp)
+0000000696    lw     a0, 12(sp)
+0000000698    slli   a0, a0, 0x22
+000000069a    srli   a0, a0, 0x3f
+000000069c    sw     a0, 0(sp)
+000000069e    li     a0, 0
+00000006a0    addi   sp, sp, 16
+00000006a2    ret
+00000006a4
+  \end{lstlisting}
+\end{lstfloat}
+
+\begin{lstfloat}[!htb]
+  \centering
+  \caption{Shift-Assisted Bit Field Flag Decoding.}
+  \label{lst:ff_shift_dec}
+  \begin{lstlisting}[style=c]
+  int main(void) {
+    volatile unsigned int xyz;
+    unsigned int xyz2 = xyz >> 29U;
+    volatile unsigned int x = (xyz2 & 0x04U) != 0;
+    volatile unsigned int y = (xyz2 & 0x02U) != 0;
+    volatile unsigned int z = (xyz2 & 0x01U) != 0;
+    return 0;
+  }
+  \end{lstlisting}
+\end{lstfloat}
+
+\begin{lstfloat}[!htb]
+  \centering
+  \caption{Machine Code for \Cref{lst:ff_shift_dec} (x86-64).}
+  \caption*{
+    \begin{tabular}{r l}
+      \textbf{Compiler:} & x64 msvc v19.33\\
+      \textbf{Compiler Options:} & /O2\\
+      \textbf{Code Size:} & 37 \glspl{byte}
+    \end{tabular}
+  }
+  \begin{lstlisting}[style=asm]
+0140001000    mov    ecx, DWORD PTR [rsp+0x8]
+0140001004    shr    ecx, 0x1d
+0140001007    mov    eax, ecx
+0140001009    shr    eax, 0x2
+014000100c    mov    DWORD PTR [rsp+0x8], eax
+0140001010    mov    eax, ecx
+0140001012    shr    eax, 1
+0140001014    and    ecx, 0x1
+0140001017    and    eax, 0x1
+014000101a    mov    DWORD PTR [rsp+0x8], eax
+014000101e    xor    eax, eax
+0140001020    mov    DWORD PTR [rsp+0x8], ecx
+0140001024    ret
+0140001025
+  \end{lstlisting}
+\end{lstfloat}
+
+\begin{lstfloat}[!htb]
+  \centering
+  \caption{Machine Code for \Cref{lst:ff_shift_dec} (ARM64).}
+  \caption*{
+    \begin{tabular}{r l}
+      \textbf{Compiler:} & ARM64 gcc 12.2\\
+      \textbf{Compiler Options:} & -O3\\
+      \textbf{Code Size:} & 44 \glspl{byte}
+    \end{tabular}
+  }
+  \begin{lstlisting}[style=asm]
+0000400540    sub    sp, sp, #0x10
+0000400544    mov    w0, #0x0
+0000400548    ldr    w1, [sp]
+000040054c    lsr    w2, w1, #31
+0000400550    str    w2, [sp, #4]
+0000400554    ubfx   x2, x1, #30, #1
+0000400558    str    w2, [sp, #8]
+000040055c    ubfx   x1, x1, #29, #1
+0000400560    str    w1, [sp, #12]
+0000400564    add    sp, sp, #0x10
+0000400568    ret
+000040056c
+  \end{lstlisting}
+\end{lstfloat}
+
+\begin{lstfloat}[!htb]
+  \centering
+  \caption{Machine Code for \Cref{lst:ff_shift_dec} (RISC-V).}
+  \caption*{
+    \begin{tabular}{r l}
+      \textbf{Compiler:} & RISC-V rv64gc clang 15.0.0\\
+      \textbf{Compiler Options:} & -O3\\
+      \textbf{Code Size:} & 32 \glspl{byte}
+    \end{tabular}
+  }
+  \begin{lstlisting}[style=asm]
+0000000684    addi   sp, sp, -16
+0000000686    lwu    a0, 12(sp)
+000000068a    srli   a1, a0, 0x1f
+000000068e    sw     a1, 8(sp)
+0000000690    slli   a1, a0, 0x21
+0000000694    srli   a1, a1, 0x3f
+0000000696    sw     a1, 4(sp)
+0000000698    slli   a0, a0, 0x22
+000000069a    srli   a0, a0, 0x3f
+000000069c    sw     a0, 0(sp)
+000000069e    li     a0, 0
+00000006a0    addi   sp, sp, 16
+00000006a2    ret
+00000006a4
+  \end{lstlisting}
+\end{lstfloat}
+
+\FloatBarrier
+\section{Position Independence and Relative Addressing}
+
+In this section, we will compare machine code generated for local non-preemptible \gls{image-symbol} references between \glspl{PIE} and non-\glspl{PIE}. Some cases of relative addressing are restricted to \glspl{PIE} --- non-\glspl{PIE} may resort to absolute addressing for performance reasons.
+
+\begin{lstfloat}[!htb]
+  \centering
+  \caption{Local Non-Preemptible Image Symbol Reference.}
+  \label{fig:local_sym}
+  \begin{lstlisting}[style=c]
+static volatile int var = 0;
+
+static int __attribute__ ((noinline)) func(void) {
+    return var;
+}
+
+int main(void) {
+    return func();
+}
+  \end{lstlisting}
+\end{lstfloat}
+
+\begin{lstfloat}[!htb]
+  \centering
+  \caption{Machine Code for \Cref{fig:local_sym} (x86-64).}
+  \caption*{
+    \begin{tabular}{r l}
+      \textbf{Compiler:} & x86-64 gcc 12.2\\
+      \textbf{Left Compiler Options:} & -O3 -fno-pie -mcmodel=large -Wl,-no-pie\\
+      \textbf{Right Compiler Options:} & -O3 -fPIE -Wl,-pie
+    \end{tabular}
+  }
+  \begin{minipage}{0.4\textwidth}
+    \begin{lstlisting}[style=asm]
+func:
+movabs  eax,ds:0x0
+    R_X86_64_64
+        .bss
+ret    
+main:
+movabs  rax,0x0
+    R_X86_64_64
+        .text
+jmp     rax
+    \end{lstlisting}
+  \end{minipage}\hfill
+  \begin{minipage}{0.6\textwidth}
+    \begin{lstlisting}[style=asm]
+func:
+mov     eax,DWORD PTR [rip+0x0]
+    R_X86_64_PC32
+        .bss-0x4
+ret    
+main:
+jmp    5
+    R_X86_64_PC32
+        .text-0x4
+    \end{lstlisting}
+  \end{minipage}
+\end{lstfloat}
+
+\begin{lstfloat}[!htb]
+  \centering
+  \caption{Machine Code for \Cref{fig:local_sym} (ARM).}
+  \caption*{
+    \begin{tabular}{r l}
+      \textbf{Compiler:} & ARM gcc 12.2\\
+      \textbf{Left Compiler Options:} & -O3 -fno-pie -Wl,-no-pie\\
+      \textbf{Right Compiler Options:} & -O3 -fPIE -Wl,-pie\\
+    \end{tabular}
+  }
+  \begin{minipage}{0.5\textwidth}
+    \begin{lstlisting}[style=asm]
+func:
+movw    r3, #0
+    R_ARM_THM_MOVW_ABS_NC
+        .LANCHOR0
+movt    r3, #0
+    R_ARM_THM_MOVT_ABS
+        .LANCHOR0
+ldr     r0, [r3, #0]
+bx      lr
+main:
+b.w     0
+    R_ARM_THM_JUMP24 func
+\end{lstlisting}
+  \end{minipage}\hfill
+  \begin{minipage}{0.5\textwidth}
+    \begin{lstlisting}[style=asm]
+func:
+ldr     r3, [pc, #4]
+add     r3, pc
+ldr     r0, [r3, #0]
+bx      lr
+.word   0x00000002
+    R_ARM_REL32 .bss
+main:
+b.w     0
+    R_ARM_THM_JUMP24 func
+    \end{lstlisting}
+  \end{minipage}
+\end{lstfloat}
+
+\begin{lstfloat}[!htb]
+  \centering
+  \caption{Machine Code for \Cref{fig:local_sym} (ARM64).}
+  \caption*{
+    \begin{tabular}{r l}
+      \textbf{Compiler:} & ARM64 gcc 12.2\\
+      \textbf{Compiler Options 1:} & -O3 -fno-pie -Wl,-no-pie\\
+      \textbf{Compiler Options 2:} & -O3 -fPIE -Wl,-pie\\
+    \end{tabular}\\
+    Both generated identical code.
+  }
+  \begin{lstlisting}[style=asm]
+func:
+adrp    x0, 0
+    R_AARCH64_ADR_PREL_PG_HI21 .bss
+ldr     w0, [x0]
+    R_AARCH64_LDST32_ABS_LO12_NC .bss
+ret
+main:
+b       0
+    R_AARCH64_JUMP26 .text
+  \end{lstlisting}
+\end{lstfloat}
+
+\begin{lstfloat}[!htb]
+  \centering
+  \caption{Machine Code for \Cref{fig:local_sym} (RISC-V).}
+  \caption*{
+    \begin{tabular}{r l}
+      \textbf{Compiler:} & RISC-V rv64gc gcc 12.2.0\\
+      \textbf{Left Compiler Options:} & -O3 -fno-pie -Wl,-no-pie\\
+      \textbf{Right Compiler Options:} & -O3 -fPIE -Wl,-pie
+    \end{tabular}
+  }
+  \begin{minipage}{0.5\textwidth}
+    \begin{lstlisting}[style=asm]
+func:
+lui     a5,0x0
+    R_RISCV_HI20 var
+    R_RISCV_RELAX *ABS*
+lw      a0,0(a5)
+    R_RISCV_LO12_I var
+    R_RISCV_RELAX *ABS*
+ret
+main:
+auipc   t1,0x0
+    R_RISCV_CALL func
+    R_RISCV_RELAX *ABS*
+jr      t1
+\end{lstlisting}
+  \end{minipage}\hfill
+  \begin{minipage}{0.5\textwidth}
+    \begin{lstlisting}[style=asm]
+func:
+auipc   a0,0x0
+    R_RISCV_PCREL_HI20
+        .LANCHOR0
+    R_RISCV_RELAX *ABS*
+lw      a0,0(a0)
+    R_RISCV_PCREL_LO12_I
+        .L0 
+    R_RISCV_RELAX *ABS*
+ret
+main:
+auipc   t1,0x0
+    R_RISCV_CALL func
+    R_RISCV_RELAX *ABS*
+jr      t1
+    \end{lstlisting}
+  \end{minipage}
+\end{lstfloat}
+
+\FloatBarrier
+\chapter{UEFI Executable File Format (UE) Specification}
+\label{chap:ue-spec}
+
+This appendix contains a draft for the specification of the \glsxtrfull{UE} format~\cite{thesis-git}.
+
+\FloatBarrier
+\section{Basic Data Types}
+
+\begin{table}[!htb]
+  \centering
+  \caption{Definition of the Basic Data Types.}
+  \hfill\\
+  \begin{tabular}{l c c}
+    \toprule
+    \textbf{Type} & \textbf{Size} [\gls{byte}] & \textbf{Max. Data Alignment} [\gls{byte}]\\
+    \midrule
+    \lstinline|uint8_t| & 1 & 1\\
+    \lstinline|uint16_t| & 2 & 2\\
+    \lstinline|uint32_t| & 4 & 4\\
+    \lstinline|uint64_t| & 8 & 8\\
+    \bottomrule
+  \end{tabular}\\
+  \hfill\\
+  \hfill\\
+  \emph{Note:} The \gls{data-alignment} requirement follows the \gls{natural-data-alignment} model, thus is to be understood as an upper bound, not an exact value.
+\end{table}
+
+\FloatBarrier
+\section{UE Header}
+
+\begin{table}[!htb]
+  \centering
+  \caption{Definition of the UE Machine Identifiers.}
+  \hfill\\
+  \begin{tabular}{c l}
+    \toprule
+    \textbf{Value} & \textbf{Description}\\
+    \midrule
+    0 & IA32\\
+    1 & X64\\
+    2 & ARM\\
+    3 & AARCH64\\
+    4 & RISCV32\\
+    5 & RISCV64\\
+    6 & RISCV128\\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[!htb]
+  \centering
+  \caption{Definition of the UE Subsystem Identifiers.}
+  \hfill\\
+  \begin{tabular}{c l}
+    \toprule
+    \textbf{Value} & \textbf{Description}\\
+    \midrule
+    0 & Application\\
+    1 & Boot Services Driver\\
+    2 & Runtime Driver\\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[!htb]
+  \centering
+  \caption{Definition of the UE Header (\lstinline|UE\_HEADER|).}
+  \hfill\\
+  \begin{tabularx}{\textwidth}{l X}
+    \toprule
+    \textbf{Type} & \textbf{Description}\\
+    \midrule
+    \lstinline|uint16_t| & The \gls{file-magic-number} to identify the \glsxtrshort{UE} file format. Must be `UE'.\\
+    \midrule
+    \lstinline|uint8_t| & Information about the \gls{image} kind and supported architectures.\\
+    Bits 2:0 & Indicates the subsystem.\\
+    Bits 7:3 & Indicates the supported architectures.\\
+    \midrule
+    \lstinline|uint8_t| & Information about the \glsxtrshort{UE} load tables and segments.\\
+    Bits 2:0 & The number of \glsxtrshort{UE} load tables.\\
+    Bits 7:3 & The index of the last segment in the \glsxtrshort{UE} segment table.\\
+    \midrule
+    \lstinline|uint32_t| & Indicates the offset of the \glsxtrshort{UE} entry point in the \glsxtrshort{UE} \gls{address-space}.\\
+    \midrule
+    \lstinline|uint64_t| & Information about the \glsxtrshort{UE} \gls{image}.\\
+    Bits 51:0  & The base UEFI page of the \glsxtrshort{UE} \gls{image}, i.e., the base address in 4 KiB units.\\
+    Bits 56:52 & Reserved for future use. Must be zero.\\
+    Bit 57     & Indicates whether the \glsxtrshort{UE} \gls{image} is designated for a fixed address.\\
+    Bit 58     & Indicates whether the \glsxtrshort{UE} relocation table has been stripped.\\
+    Bit 59     & Indicates whether \glsxtrshort{UE} chained fixups are used.\\
+    Bits 63:60 & The shift exponent, offset by $-12$, for the \glsxtrshort{UE} segment alignment in \glspl{byte}.\\
+    \midrule
+    \lstinline|UE\_SEGMENT\[\]| & The \glsxtrshort{UE} segment table. It contains all data of the \glsxtrshort{UE} address space.\\
+    \midrule
+    \lstinline|UE\_LOAD\_TABLE\[\]| & The \glsxtrshort{UE} load tables. They contain data useful for UE loading.\\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\FloatBarrier
+\section{UE Segment Table}
+
+All \glsxtrshort{UE} segments are contiguous in the \glsxtrshort{UE} \gls{address-space}. The offset of the first \glsxtrshort{UE} segment in the \glsxtrshort{UE} \gls{address-space} is $0$. All \glsxtrshort{UE} segments' data are contiguous in the \glsxtrshort{UE} file. The offset of the first \glsxtrshort{UE} segment in the \glsxtrshort{UE} file is the end of the \glsxtrshort{UE} file header.
+
+\begin{table}[!htb]
+  \centering
+  \caption{Definition of the UE Segment Permissions Configurations.}
+  \hfill\\
+  \begin{tabular}{c l}
+    \toprule
+    \textbf{Value} & \textbf{Description}\\
+    \midrule
+    0 & Execute\\
+    1 & Read, Execute\\
+    2 & Read, Write\\
+    3 & Read\\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[!htb]
+  \centering
+  \caption{Definition of a UE Segment Header (\lstinline|UE\_SEGMENT|).}
+  \hfill\\
+  \begin{tabularx}{\textwidth}{c X}
+    \toprule
+    \textbf{Type} & \textbf{Description}\\
+    \midrule
+    \lstinline|uint32_t| & Information about the \glsxtrshort{UE} segment in the \glsxtrshort{UE} \gls{address-space}.\\
+    Bits 19:0 & The size, in 4-KiB units, of the \glsxtrshort{UE} segment in the \glsxtrshort{UE} \gls{address-space}.\\
+    Bits 21:20 & The \glsxtrshort{UE} segment permissions.\\
+    Bits 31:22 & Reserved for future use. Must be zero.\\
+    \midrule
+    \lstinline|uint32_t| & The size, in \glspl{byte}, of the \glsxtrshort{UE} segment in the \glsxtrshort{UE} file.\\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\FloatBarrier
+\section{UE Load Tables}
+
+All \glsxtrshort{UE} load tables are contiguous in the \glsxtrshort{UE} file. The offset of the first \glsxtrshort{UE} load table in the \glsxtrshort{UE} file is the end of the last \glsxtrshort{UE} segment in the \glsxtrshort{UE} file. All \glsxtrshort{UE} load tables are ordered ascending by their identifier.
+
+\begin{table}[!htb]
+  \centering
+  \caption{Definition of the UE Load Table Identifiers.}
+  \hfill\\
+  \begin{tabular}{c l}
+    \toprule
+    \textbf{Value} & \textbf{Description}\\
+    \midrule
+    0 & Relocation Table\\
+    1 & Debug Table\\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[!htb]
+  \centering
+  \caption{Definition of a UE Load Table Header (\lstinline|UE\_LOAD\_TABLE|).}
+  \hfill\\
+  \begin{tabularx}{\textwidth}{l X}
+    \toprule
+    \textbf{Type} & \textbf{Description}\\
+    \midrule
+    \lstinline|uint32_t| & Information about the \glsxtrshort{UE} load table.\\
+    Bits 28:0 & The size, in $8$-\gls{byte} units, of the \glsxtrshort{UE} load table in the \glsxtrshort{UE} file.\\
+    Bits 31:29 & The identifier of the \glsxtrshort{UE} load table.\\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\FloatBarrier
+\section{UE Relocation Load Table}
+
+\begin{table}[!htb]
+  \centering
+  \caption{Definition of the Generic UE Relocation Identifiers.}
+  \hfill\\
+  \begin{tabular}{c l}
+    \toprule
+    \textbf{Value} & \textbf{Description}\\
+    \midrule
+    0 & Absolute 32-bit\\
+    1 & Absolute 64-bit\\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[!htb]
+  \centering
+  \caption{Definition of the Common Header of UE Chained Relocation Fixups (\lstinline|UE\_RELOC\_FIXUP\_HDR|).}
+  \hfill\\
+  \begin{tabularx}{\textwidth}{l X}
+    \toprule
+    \textbf{Type} & \textbf{Description}\\
+    \midrule
+    \lstinline|uint16_t| & \\
+    Bits 3:0 & The relocation type of the next chained relocation fixup. Only valid when [Bits 15:4] are not \texttt{0x0FFF}.\\
+    Bits 15:4 & The offset to the next chained relocation fixup from the end of the current one. If \texttt{0x0FFF}, the current chain is terminated. Consult the fixup root for further relocation fixups.\\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\begin{table}[!htb]
+  \centering
+  \caption{Definition of the Generic 64-Bit UE Chained Relocation Fixup (\lstinline|UE\_RELOC\_FIXUP\_64|).}
+  \hfill\\
+  \begin{tabularx}{\textwidth}{l X}
+    \toprule
+    \textbf{Type} & \textbf{Description}\\
+    \midrule
+    \lstinline|uint64_t| & \\
+    Bits 15:0 & The common header of UE chained relocation fixups.\\
+    Bits 47:16 & The address value to relocate.\\
+    Bits 63:48 & Must be zero.\\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\begin{table}[!htb]
+  \centering
+  \caption{Definition of a UE Fixup Root (\lstinline|UE\_FIXUP\_ROOT|).}
+  \hfill\\
+  \begin{tabularx}{\textwidth}{l X}
+    \toprule
+    \textbf{Type} & \textbf{Description}\\
+    \midrule
+    \lstinline|uint32_t| & The offset of the first head fixup, in \glspl{byte}, from the end of the previous \glsxtrshort{UE} relocation fixup (chained or not). The first \glsxtrshort{UE} fixup root is relative to $0$.\\
+    \midrule
+    \lstinline|uint16_t[]| & The head fixups of the \glsxtrshort{UE} fixup root.\\
+    Bits 3:0 & The type of the \glsxtrshort{UE} relocation fixup.\\
+    Bits 15:4 & The offset of the next \glsxtrshort{UE} head fixup from the end of the last UE relocation fixup in the chain (if chained). If \texttt{0x0FFF}, the current fixup root is terminated.\\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\FloatBarrier
+\section{UE Debug Load Table}
+
+\begin{table}[!htb]
+  \centering
+  \caption{Definition of the UE Debug Table Header (\lstinline|UE\_DEBUG\_TABLE|).}
+  \hfill\\
+  \begin{tabularx}{\textwidth}{l X}
+    \toprule
+    \textbf{Type} & \textbf{Description}\\
+    \midrule
+    \lstinline|uint8_t| & Information about the \gls{image} regarding the symbols file.\\
+    Bits 1:0 & The offset, in \gls{image} alignment units, to be subtracted from the \glsxtrshort{UE} base address in order to retrieve the \glsxtrshort{UE} symbols base address.\\
+    Bits 7:2 & Reserved for future use. Must be zero.\\
+    \midrule
+    \lstinline|uint8_t| & The length, in \glspl{byte}, of the \glsxtrshort{UE} symbols path (excluding the terminator).\\
+    \midrule
+    \lstinline|uint8_t[]| & The \glsxtrshort{UE} symbols path. Must be \textbackslash0-terminated.\\
+    \midrule
+    \lstinline|uint8_t[8][]| & The \glsxtrshort{UE} segment name table. Each entry must be \textbackslash0-terminated. The order matches the \glsxtrshort{UE} segment table.\\
+    \bottomrule
+  \end{tabularx}
+\end{table}
+
+\FloatBarrier
+\chapter{UE File Format Space-Saving}
+\label{chap:space_savings}
+
+This appendix contains the space-saving reports for converting all modules of \gls{OVMF} and \gls{ArmVirtQemu} from \glsxtrshort{PE} to \glsxtrshort{UE}. All modules have been compiled in \texttt{RELEASE} mode. It was generated by a custom script and is publicly available and reproducible for artifact evaluation~\cite{thesis-git}.
+
+\input{AutoGenerated/appendix_size}
+
+\FloatBarrier
+\chapter{Implementation Fuzz-Testing Code Coverage}
+\label{chap:code_cov}
+
+This appendix contains the code coverage report data for \gls{fuzz-testing} the \glsxtrshort{UE} parsing and conversion code. It was generated by LCOV~\cite{lcov} and is publicly available and reproducible for artifact evaluation~\cite{thesis-git}.
+
+\input{appendix_cov.tex}

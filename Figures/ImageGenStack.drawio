@@ -1,0 +1,71 @@
+<mxfile host="app.diagrams.net" modified="2023-07-17T18:55:34.292Z" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5.2 Safari/605.1.15" etag="-9qJtJANtiSAzgoiKzK4" version="21.6.2" type="device">
+  <diagram name="Page-1" id="Fs1GHNBIdJabChpcMLxG">
+    <mxGraphModel dx="588" dy="687" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="lfTHoIs1F12e3UORlupB-12" value="" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=LMRoman10-Regular;fontSize=16;fillColor=none;dashed=1;strokeWidth=2;" parent="1" vertex="1">
+          <mxGeometry x="390.5" y="230.5" width="150" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="lfTHoIs1F12e3UORlupB-6" value="" style="rounded=0;whiteSpace=wrap;html=1;fontFamily=LMRoman10-Regular;fontSize=16;fillColor=none;dashed=1;" parent="1" vertex="1">
+          <mxGeometry x="140" y="230" width="150" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="lfTHoIs1F12e3UORlupB-9" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=LMRoman10-Regular;fontSize=16;strokeWidth=2;" parent="1" source="lfTHoIs1F12e3UORlupB-1" target="lfTHoIs1F12e3UORlupB-2" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lfTHoIs1F12e3UORlupB-1" value="&lt;font face=&quot;LMRoman10-Regular&quot; style=&quot;font-size: 16px;&quot;&gt;Input&lt;br&gt;Image File&lt;br&gt;Parser&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;strokeWidth=2;fontStyle=1" parent="1" vertex="1">
+          <mxGeometry x="150.5" y="240.5" width="130" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="lfTHoIs1F12e3UORlupB-13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=LMRoman10-Regular;fontSize=16;strokeWidth=2;" parent="1" source="lfTHoIs1F12e3UORlupB-2" target="lfTHoIs1F12e3UORlupB-11" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lfTHoIs1F12e3UORlupB-2" value="&lt;font face=&quot;LMRoman10-Regular&quot; style=&quot;font-size: 16px;&quot;&gt;Input Image File to IR Translation&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;fontStyle=1;strokeWidth=2;" parent="1" vertex="1">
+          <mxGeometry x="400.5" y="240.5" width="130" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="HX3m459Yo27J00ApVe7F-1" style="rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=0;entryY=0.75;entryDx=0;entryDy=0;dashed=1;dashPattern=1 2;" parent="1" source="lfTHoIs1F12e3UORlupB-5" target="lfTHoIs1F12e3UORlupB-2" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lfTHoIs1F12e3UORlupB-5" value="&lt;font face=&quot;LMRoman10-Regular&quot; style=&quot;font-size: 16px;&quot;&gt;Output&lt;br&gt;Image File&lt;br&gt;Parser&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;dashPattern=1 2;" parent="1" vertex="1">
+          <mxGeometry x="150" y="350" width="130" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="lfTHoIs1F12e3UORlupB-7" value="Image File Consumers" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;fontFamily=LMRoman10-Regular;fontStyle=1" parent="1" vertex="1">
+          <mxGeometry x="130" y="200" width="170" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="lfTHoIs1F12e3UORlupB-8" value="Image File Producer" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;fontFamily=LMRoman10-Regular;fontStyle=1" parent="1" vertex="1">
+          <mxGeometry x="390" y="200" width="150" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="lfTHoIs1F12e3UORlupB-14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;fontFamily=LMRoman10-Regular;fontSize=16;dashed=1;dashPattern=1 2;" parent="1" source="lfTHoIs1F12e3UORlupB-11" target="lfTHoIs1F12e3UORlupB-5" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lfTHoIs1F12e3UORlupB-11" value="&lt;font face=&quot;LMRoman10-Regular&quot; style=&quot;font-size: 16px;&quot;&gt;&lt;b&gt;IR to Output Image File Translation&lt;/b&gt;&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;strokeWidth=2;" parent="1" vertex="1">
+          <mxGeometry x="400.5" y="350.5" width="130" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="lfTHoIs1F12e3UORlupB-16" value="Translate" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;fontFamily=LMRoman10-Regular;fontStyle=1" parent="1" vertex="1">
+          <mxGeometry x="390" y="320" width="75" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="lfTHoIs1F12e3UORlupB-17" value="Abstract" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;fontFamily=LMRoman10-Regular;fontStyle=1" parent="1" vertex="1">
+          <mxGeometry x="310" y="255" width="60" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="lfTHoIs1F12e3UORlupB-18" value="Validate" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;fontFamily=LMRoman10-Regular;" parent="1" vertex="1">
+          <mxGeometry x="310" y="386" width="60" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="HX3m459Yo27J00ApVe7F-2" value="Abstract" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;fontFamily=LMRoman10-Regular;rotation=328;" parent="1" vertex="1">
+          <mxGeometry x="308" y="310" width="60" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="HX3m459Yo27J00ApVe7F-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.25;exitDx=0;exitDy=0;entryX=1;entryY=0.75;entryDx=0;entryDy=0;curved=1;dashed=1;dashPattern=1 2;" parent="1" source="lfTHoIs1F12e3UORlupB-2" target="lfTHoIs1F12e3UORlupB-2" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="550" y="258" />
+              <mxPoint x="550" y="293" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="HX3m459Yo27J00ApVe7F-4" value="Verify" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;fontFamily=LMRoman10-Regular;" parent="1" vertex="1">
+          <mxGeometry x="550" y="265" width="50" height="20" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

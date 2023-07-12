@@ -1,0 +1,25 @@
+<mxfile host="app.diagrams.net" modified="2023-07-13T21:45:26.000Z" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5.1 Safari/605.1.15" etag="a8yZIkB-HHFeznV0CWDE" version="21.6.2" type="device">
+  <diagram id="M6xswmvaadWqSD3zCsst" name="Page-1">
+    <mxGraphModel dx="467" dy="321" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="SFmN6_Fu8qTGVH1CKCmn-1" value="&lt;font face=&quot;LMRoman10-Regular&quot; style=&quot;font-size: 16px;&quot;&gt;Linux Module&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="360" y="440" width="320" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="SFmN6_Fu8qTGVH1CKCmn-3" value="&lt;div style=&quot;text-align: start; line-height: 18px; font-size: 16px;&quot;&gt;&lt;font style=&quot;font-size: 16px;&quot; face=&quot;LMRoman10-Regular&quot;&gt;&lt;b&gt;Linux Module Signature Header&lt;/b&gt;&lt;/font&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;strokeWidth=2;" parent="1" vertex="1">
+          <mxGeometry x="360.5" y="510.5" width="320" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="SFmN6_Fu8qTGVH1CKCmn-4" value="&lt;div style=&quot;text-align: start; line-height: 18px;&quot;&gt;&lt;div style=&quot;line-height: 18px;&quot;&gt;&lt;font style=&quot;font-size: 16px;&quot; face=&quot;LMRoman10-Regular&quot;&gt;&lt;b&gt;&quot;~Module signature appended~&quot;&lt;/b&gt;&lt;/font&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;strokeWidth=2;" parent="1" vertex="1">
+          <mxGeometry x="360.5" y="540.5" width="320" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="SFmN6_Fu8qTGVH1CKCmn-2" value="&lt;font face=&quot;LMRoman10-Regular&quot; style=&quot;font-size: 16px;&quot;&gt;&lt;b&gt;Linux Module Signature&lt;/b&gt;&lt;br&gt;&lt;/font&gt;" style="rounded=0;whiteSpace=wrap;html=1;strokeWidth=2;" parent="1" vertex="1">
+          <mxGeometry x="360.5" y="480.5" width="320" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="D1UmjxAAKYRXzKanjaa8-1" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeWidth=1;" vertex="1" parent="1">
+          <mxGeometry x="360" y="440" width="320" height="130" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

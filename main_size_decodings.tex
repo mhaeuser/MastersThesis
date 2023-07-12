@@ -1,0 +1,16 @@
+\begin{table}[htb]
+  \centering
+  \begin{tabular}{l c c c}
+    \toprule
+    \multirow{2}{*}[-2pt]{\textbf{Decoding}} & \multicolumn{3}{c}{\textbf{Code Size} [byte]}\\
+    \cmidrule{2-4}
+    & \textbf{x86-64} & \textbf{ARM64} & \textbf{RISC-V}\\
+    \midrule
+    Mask-Only & 29 & 40 & 28\\
+    Shift-Only & 25 & 40 & 24\\
+    \bottomrule
+  \end{tabular}
+  \caption{Bit Field Decoding Code Size Comparison.}
+  \label{fig:field_dec_sizes}
+  \caption*{Comparison of code sizes for mask-only and shift-only bit field decoding of two values across architectures. For the source data, see \Cref{sec:enc_formats}.}
+\end{table}

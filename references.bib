@@ -1,18 +1,1555 @@
-@mastersthesis{Senf13,
-  key         ={Senf13},
-  author      ={M. Senftleben},
-  title       ={Operational Characterization of Weak Memory Consistency Models},
-  editor      ={K. Schneider and D. Baudisch},
-  howpublished={Master Thesis},
-  school      ={Department of Computer Science, University of Kaiserslautern, Germany},
-  year        ={2013},
-  note        ={Master},
+@Book{ISO:2018:III,
+  author =       "{ISO}",
+  title =        "{ISO\slash IEC 9899:2018 Information technology ---
+                 Programming languages --- C}",
+  publisher =    "International Organization for Standardization",
+  address =      "Geneva, Switzerland",
+  edition =      "Fourth",
+  month =        jun,
+  year =         "2018",
+  bibsource =    "http://www.math.utah.edu/pub/tex/bib/isostd.bib",
+  URL =          "https://www.iso.org/standard/74528.html",
+  urldate      = {2022-10-29},
+  remark =       "Revises ISO/IEC 9899:2011.",
 }
-@book{Tolk12,
-  title={The Lord of the Rings: One Volume},
-  author={Tolkien, J.R.R.},
-  isbn={9780547951942},
-  series={The Lord of the Rings},
-  year={2012},
-  publisher={Houghton Mifflin Harcourt}
+
+@Book{UCS,
+  author =       "{ISO}",
+  title =        "{ISO\slash IEC 9899:2018 Information technology ---
+                 Universal coded character set (UCS)}",
+  publisher =    "International Organization for Standardization",
+  address =      "Geneva, Switzerland",
+  edition =      "Sixth",
+  month =        dec,
+  year =         "2020",
+  bibsource =    "http://www.math.utah.edu/pub/tex/bib/isostd.bib",
+  URL =          "https://www.iso.org/standard/76835.html",
+  urldate      = {2023-07-16},
+}
+
+@misc{pe-format,
+  author       = {{Microsoft Corporation} and others},
+  howpublished = {Online},
+  title        = {PE Format},
+  month        = jun,
+  year         = {2022},
+  url          = {https://github.com/MicrosoftDocs/win32/blob/33f79279f16b9f4608b3bb1afd0ce6e27280d70b/desktop-src/Debug/pe-format.md},
+  urldate      = {2022-10-29}
+}
+
+@book{sysVGABI,
+  author =       {{The Santa Cruz Operation, Inc.} and AT\&T},
+  title =        {System V Application Binary Interface},
+  publisher =    {The Santa Cruz Operation, Inc.},
+  address =      {Santa Cruz, WA, USA},
+  edition =      "Edition 4.1",
+  month =        mar,
+  year =         "1997",
+  URL =          "http://www.sco.com/developers/devspecs/gabi41.pdf",
+  urldate      = {2022-11-08}
+}
+
+@Book{sysVi386,
+  author =       {{The Santa Cruz Operation, Inc.} and AT\&T},
+  title =        {System V Application Binary Interface},
+  subtitle       = {Intel386\texttrademark~Architecture Processor Supplement},
+  publisher =    {The Santa Cruz Operation, Inc.},
+  address =      {Santa Cruz, WA, USA},
+  edition =      "Fourth",
+  month =        mar,
+  year =         "1997",
+  URL =          "http://www.sco.com/developers/devspecs/abi386-4.pdf",
+  urldate      = {2022-10-29}
+}
+
+@book{sysVAMD64,
+  author         = {H.J. Lu and  Michael Matz and Milind Girkar and Jan Hubi\v{c}ka and Andreas Jaeger and Mark Mitchell},
+  title          = {System V Application Binary Interface},
+  subtitle       = {AMD64 Architecture Processor Supplement (With LP64 and ILP32 Programming Models)},
+  month          = may,
+  year           = {2023},
+  note           = {Version 1.0},
+  url            = {https://gitlab.com/x86-psABIs/x86-64-ABI/-/tree/ca48acd297294172349d4057fb0f04016c5733bd},
+  urldate        = {2023-07-01},
+}
+
+@book{sysVUpdate,
+  author =       {{The Santa Cruz Operation, Inc.} and AT\&T},
+  title =        {System V Application Binary Interface},
+  publisher =    {The Santa Cruz Operation, Inc.},
+  address =      {Santa Cruz, WA, USA},
+  edition =      "Update",
+  month =        dec,
+  year =         "2012",
+  URL =          "http://www.sco.com/developers/gabi/2012-12-31/contents.html",
+  urldate      = {2022-11-08}
+}
+
+@Book{uefi-spec,
+  author       = {{UEFI Forum, Inc.}},
+  howpublished = {Online},
+  title        = {Unified Extensible Firmware Interface (UEFI) Specification},
+  note         = {Release 2.10},
+  month        = aug,
+  year         = {2022},
+  url          = {https://uefi.org/sites/default/files/resources/UEFI_Spec_2_10_Aug29.pdf},
+  urldate      = {2022-10-29}
+}
+
+@book{pi-spec,
+  author       = {{UEFI Forum, Inc.}},
+  howpublished = {Online},
+  title        = {UEFI Platform Initialization (PI) Specification},
+  note         = {Version 1.7 Errata A},
+  month        = apr,
+  year         = {2020},
+  url          = {https://uefi.org/sites/default/files/resources/PI_Spec_1_7_A_final_May1.pdf},
+  urldate      = {2022-10-29}
+}
+
+@INPROCEEDINGS{secure-pe,
+  author={Häuser, Marvin and Cheptsov, Vitaly},
+  booktitle={2020 Ivannikov Ispras Open Conference (ISPRAS)}, 
+  title={Securing the EDK II Image Loader}, 
+  month=dec, 
+  year={2020},
+  volume={},
+  number={},
+  pages={16--25},
+  doi={10.1109/ISPRAS51486.2020.00010}}
+
+@misc{macho-spec,
+  author       = {{Apple Inc.}},
+  howpublished = {Online},
+  title        = {OS X ABI Mach-O File Format Reference},
+  month        = feb,
+  year         = {2009},
+  location     = {Cupertino, CA, USA},
+  url          = {https://web.archive.org/web/20100114012151/http://developer.apple.com/mac/library/documentation/DeveloperTools/Conceptual/MachORuntime/Reference/reference.html},
+  urldate      = {2022-10-29}
+}
+
+@misc{xnu,
+  author       = {{Apple Inc.}},
+  howpublished = {Online},
+  title        = {XNU},
+  note         = {Version 8796.101.5},
+  month        = jun,
+  year         = {2023},
+  location     = {Cupertino, CA, USA},
+  url          = {https://github.com/apple-oss-distributions/xnu/tree/aca3beaa3dfbd42498b42c5e5ce20a938e6554e5},
+  urldate      = {2023-07-12}
+}
+
+@misc{linux,
+  author       = {Torvalds, Linus and others},
+  howpublished = {Online},
+  title        = {Linux},
+  note         = {Version 6.4},
+  month        = jun,
+  year         = {2023},
+  url          = {https://github.com/torvalds/linux/tree/6995e2de6891c724bfeb2db33d7b87775f913ad1},
+  urldate      = {2023-07-13}
+}
+
+@misc{elf-spec,
+  author       = {{TIS Committee}},
+  howpublished = {Online},
+  title        = {Tool Interface Standard (TIS) Executable and Linking Format (ELF) Specification},
+  note         = {Version 1.2},
+  month        = may,
+  year         = {1995},
+  url          = {https://refspecs.linuxbase.org/elf/elf.pdf},
+  urldate      = {2022-10-29}
+}
+
+@INPROCEEDINGS{amaranth,
+  author={Krichanov, Mikhail and Cheptsov, Vitaly},
+  booktitle={2021 Ivannikov Ispras Open Conference (ISPRAS)}, 
+  title={UEFI virtual machine firmware hardening through snapshots and attack surface reduction}, 
+  month=dec,
+  year={2021},
+  volume={},
+  number={},
+  pages={30--36},
+  doi={10.1109/ISPRAS53967.2021.00010}}
+
+@misc{dyld_chains,
+  author       = {Noah Martin},
+  howpublished = {Online},
+  title        = {How iOS 15 makes your app launch faster},
+  month        = jun,
+  year         = {2021},
+  url          = {https://www.emergetools.com/blog/posts/iOS15LaunchTime},
+  urldate      = {2022-10-30}
+}
+
+@misc{agner-x86-cc,
+  author       = {Agner Fog},
+  organization = {Technical University of Denmark},
+  location     = {Copenhagen, Denmark},
+  howpublished = {Online},
+  title        = {Calling conventions for different C++ compilers and operating systems},
+  month        = aug,
+  year         = {2022},
+  url          = {https://www.agner.org/optimize/calling_conventions.pdf},
+  urldate      = {2022-11-03}
+}
+
+@misc{win10-hwreq,
+  author       = {{Microsoft Corporation}},
+  location     = {Redmond, WA, USA},
+  howpublished = {Online},
+  title        = {Windows 10 Minimum Hardware Requirements},
+  month        = dec,
+  year         = {2019},
+  url          = {https://download.microsoft.com/download/c/1/5/c150e1ca-4a55-4a7e-94c5-bfc8c2e785c5/Windows%2010%20Minimum%20Hardware%20Requirements.pdf},
+  urldate      = {2022-11-04}
+}
+
+@misc{qc-uefi,
+  author       = {Alexander W. Dent},
+  organization = {Qualcomm Technologies, Inc.},
+  location     = {San Diego, CA, US},
+  howpublished = {Online},
+  title        = {Secure Boot and Image Authentication},
+  subtitle     = {Technical Overview},
+  version      = {2.0},
+  mon          = aug,
+  year         = {2019},
+  url          = {https://www.qualcomm.com/content/dam/qcomm-martech/dm-assets/documents/secure-boot-and-image-authentication-version_final.pdf},
+  urldate      = {2022-11-04}
+}
+
+@misc{bios-spec,
+  author       = {Scott Townsend},
+  organization = {{Compaq Computer Corporation} and {Phoenix Technologies Ltd.} and {Intel Corporation}},
+  location     = {Irvine, CA, USA},
+  howpublished = {Online},
+  title        = {BIOS Boot Specification},
+  version      = {1.01},
+  month        = jan,
+  year         = {1996},
+  url          = {https://web.archive.org/web/20110715081320/http://www.phoenix.com/resources/specs-bbs101.pdf},
+  urldate      = {2022-11-05}
+}
+
+@misc{pe-authenticode,
+  author       = {{Microsoft Corporation}},
+  location     = {Redmond, WA, USA},
+  howpublished = {Online},
+  title        = {Windows Authenticode Portable Executable Signature Format},
+  version      = {1.0},
+  month        = mar,
+  year         = {2008},
+  url          = {https://download.microsoft.com/download/9/c/5/9c5b2167-8017-4bae-9fde-d599bac8184a/Authenticode_PE.docx},
+  urldate      = {2022-11-06}
+}
+
+@misc{mic-auth-bug,
+  author       = {Tomislav Peri{\v{C}}in},
+  organization = {ReversingLabs},
+  howpublished = {Online},
+  title        = {Breaking the Microsoft Authenticode security model},
+  month        = oct,
+  year         = {2019},
+  url          = {https://blog.reversinglabs.com/blog/rocking-the-foundations-of-a-trust-based-digital-code-signing-system},
+  urldate      = {2022-11-07}
+}
+
+@misc{win-auth-bug,
+  author       = {Tomislav Peri{\v{C}}in},
+  organization = {ReversingLabs},
+  howpublished = {Online},
+  title        = {Breaking the Windows Authenticode security model},
+  month        = oct,
+  year         = {2019},
+  url          = {https://blog.reversinglabs.com/blog/breaking-the-windows-authenticode-security-model},
+  urldate      = {2022-11-07}
+}
+
+@misc{uefi-auth-bug,
+  author       = {Tomislav Peri{\v{C}}in},
+  organization = {ReversingLabs},
+  howpublished = {Online},
+  title        = {Breaking the UEFI firmware Authenticode security model},
+  month        = oct,
+  year         = {2019},
+  url          = {https://blog.reversinglabs.com/blog/breaking-uefi-firmware-authenticode-security-model},
+  urldate      = {2022-11-07}
+}
+
+@misc{jar-msi-auth-bug,
+  author       = {Bernardo Quintero},
+  organization = {VirusTotal},
+  howpublished = {Online},
+  title        = {Distribution of malicious JAR appended to MSI files signed by third parties},
+  month        = jan,
+  year         = {2019},
+  url          = {https://blog.virustotal.com/2019/01/distribution-of-malicious-jar-appended.html},
+  urldate      = {2022-11-07}
+}
+
+@misc{apple-cdhash,
+  author       = {{Apple Inc.}},
+  howpublished = {Online},
+  title        = {TN3126: Inside Code Signing: Hashes},
+  month        = may,
+  year         = {2022},
+  location     = {Cupertino, CA, USA},
+  url          = {https://developer.apple.com/documentation/technotes/tn3126-inside-code-signing-hashes#Special-slots},
+  urldate      = {2022-11-13}
+}
+
+@misc{apple-cdhash-old,
+  author       = {{Apple Inc.}},
+  howpublished = {Online},
+  title        = {TN2206: macOS Code Signing In Depth},
+  month        = aug,
+  year         = {2016},
+  location     = {Cupertino, CA, USA},
+  url          = {https://developer.apple.com/library/archive/technotes/tn2206/_index.html},
+  urldate      = {2022-11-13}
+}
+
+@misc{linux-kmod-sig,
+  author       = {David Howells and David Woodhouse and Juerg Haefliger},
+  organization = {{Red Hat, Inc.} and {Intel Corporation.} and {Hewlett Packard Enterprise Development LP}},
+  location     = {The Linux Kernel},
+  howpublished = {Online},
+  title        = {sign-tool},
+  subtitle     = {Sign a module file using the given key.},
+  year         = {2022},
+  month        = aug,
+  url          = {https://github.com/torvalds/linux/blob/e01d50cbd6eece456843717a566a34e8b926cf0c/scripts/sign-file.c},
+  urldate      = {2022-11-15}
+}
+
+@misc{msft-pack,
+  author       = {{Microsoft Corporation} and others},
+  howpublished = {Online},
+  title        = {pack pragma},
+  year         = {2022},
+  month        = aug,
+  url          = {https://github.com/MicrosoftDocs/cpp-docs/blob/883e1a87e5d93b9c45f998d14d6bc01f0fa74dfe/docs/preprocessor/pack.md},
+  urldate      = {2022-11-15}
+}
+
+@misc{edk2,
+  author       = {{TianoCore} and others},
+  howpublished = {Online},
+  title        = {EFI Development Kit II},
+  note         = {Commit 93629f2},
+  month        = nov,
+  year         = {2022},
+  url          = {https://github.com/tianocore/edk2/tree/93629f2c7cf05ebc0f458eacc42a33147096f9d1},
+  urldate      = {2022-11-16}
+}
+
+@misc{apple-cctools,
+  author       = {{Apple Inc.}},
+  location     = {Cupertino, CA, USA},
+  howpublished = {Online},
+  title        = {cctools},
+  version      = {973.0.1},
+  month        = oct,
+  year         = {2021},
+  url          = {https://opensource.apple.com/source/cctools/cctools-973.0.1/},
+  urldate      = {2022-11-21}
+}
+
+@misc{ocmtoc,
+  author       = {{Acidanthera}},
+  howpublished = {Online},
+  title        = {ocmtoc},
+  note         = {Commit 6f70907},
+  month        = jan,
+  year         = {2023},
+  url          = {https://github.com/acidanthera/ocmtoc/tree/6f709079e1770206d62bc3abdce73a106aa5c9ff},
+  urldate      = {2023-01-27}
+}
+
+@misc{arm-nataligned,
+  author       = {{Arm Limited}},
+  location     = {Cambridge, England, UK},
+  howpublished = {Online},
+  title        = {ARM\textsuperscript{\normalfont{~\textregistered}}~Compiler armcc User Guide},
+  subtitle     = {Advantages of natural data alignment},
+  version      = {5.06},
+  url          = {https://developer.arm.com/documentation/dui0472/m/Compiler-Coding-Practices/Advantages-of-natural-data-alignment},
+  urldate      = {2022-12-03}
+}
+
+@misc{arm-isa,
+  author       = {{Arm Limited}},
+  location     = {Cambridge, England, UK},
+  howpublished = {Online},
+  title        = {Arm\textsuperscript{\normalfont{~\textregistered}}~Architecture Reference Manual},
+  subtitle     = {for A-profile architecture},
+  version      = {J.a},
+  url          = {https://developer.arm.com/documentation/ddi0487/ja/},
+  urldate      = {2023-06-25}
+}
+
+@misc{arm32-pcs,
+  author       = {{Arm Limited}},
+  location     = {Cambridge, England, UK},
+  howpublished = {Online},
+  title        = {Procedure Call Standard for the Arm\textsuperscript{\normalfont{~\textregistered}}~Architecture},
+  month        = oct,
+  year         = {2022},
+  url          = {https://github.com/ARM-software/abi-aa/releases/download/2022Q3/aapcs32.pdf},
+  urldate      = {2022-12-03}
+}
+
+@misc{arm64-pcs,
+  author       = {{Arm Limited}},
+  location     = {Cambridge, England, UK},
+  howpublished = {Online},
+  title        = {Procedure Call Standard for the Arm\textsuperscript{\normalfont{~\textregistered}}~64-bit Architecture (AArch64)},
+  month        = oct,
+  year         = {2022},
+  url          = {https://github.com/ARM-software/abi-aa/releases/download/2022Q3/aapcs64.pdf},
+  urldate      = {2022-12-03}
+}
+
+@misc{arm64-elf,
+  author       = {{Arm Limited}},
+  location     = {Cambridge, England, UK},
+  howpublished = {Online},
+  title        = {ELF for the Arm\textsuperscript{\normalfont{~\textregistered}}~64-bit Architecture (AArch64)},
+  month        = apr,
+  year         = {2023},
+  url          = {https://github.com/ARM-software/abi-aa/releases/download/2023Q1/aaelf32.pdf},
+  urldate      = {2023-07-12}
+}
+
+@misc{ms-sbkey,
+  author       = {Microsoft Corporation},
+  howpublished = {Online},
+  title        = {Windows Secure Boot Key Creation and Management Guidance},
+  month        = may,
+  year         = {2022},
+  url          = {https://learn.microsoft.com/en-us/windows-hardware/manufacture/desktop/windows-secure-boot-key-creation-and-management-guidance?view=windows-11},
+  urldate      = {2022-12-03}
+}
+
+@misc{ms-sbkey3rd,
+  author       = {{Microsoft Corporation} and others},
+  howpublished = {Online},
+  title        = {Secure the Windows boot process},
+  month        = aug,
+  year         = {2022},
+  url          = {https://github.com/MicrosoftDocs/windows-itpro-docs/blob/5e501367a7c1fbc8c6ef14855afd81e50ad298d8/windows/security/information-protection/secure-the-windows-10-boot-process.md},
+  urldate      = {2022-12-03}
+}
+
+@article{meltdown,
+  author = {Lipp, Moritz and Schwarz, Michael and Gruss, Daniel and Prescher, Thomas and Haas, Werner and Horn, Jann and Mangard, Stefan and Kocher, Paul and Genkin, Daniel and Yarom, Yuval and Hamburg, Mike and Strackx, Raoul},
+  title = {Meltdown: Reading Kernel Memory from User Space},
+  year = {2020},
+  issue_date = {June 2020},
+  publisher = {Association for Computing Machinery},
+  address = {New York, NY, USA},
+  volume = {63},
+  number = {6},
+  doi = {10.1145/3357033},
+  abstract = {Lessons learned from Meltdown's exploitation of the weaknesses in today's processors.},
+  journal = {Commun. ACM},
+  month = may,
+  pages = {46--56},
+  numpages = {11}
+}
+
+@misc{pti,
+  author       = {{The kernel development community}},
+  howpublished = {Online},
+  title        = {The Linux Kernel documentation},
+  subtitle     = {Page Table Isolation (PTI)},
+  version      = {6.0.0},
+  month        = oct,
+  year         = {2022},
+  url          = {https://www.kernel.org/doc/html/v6.0/x86/pti.html},
+  urldate      = {2022-12-10}
+}
+
+@misc{ia32,
+  author       = {{Intel Corporation}},
+  howpublished = {Online},
+  title        = {Intel\textsuperscript{\normalfont{~\textregistered}}~64 and IA-32 Architectures Software Developer's Manual},
+  subtitle     = {Combined Volumes: 1, 2A, 2B, 2C, 2D, 3A, 3B, 3C, 3D and 4},
+  note         = {Order Number: 325462-079US},
+  month        = apr,
+  location     = {Santa Clara, CA, USA},
+  year         = {2022},
+  url          = {https://cdrdv2.intel.com/v1/dl/getContent/671200},
+  urldate      = {2022-12-10}
+}
+
+@misc{ia32-ext,
+  author       = {{Intel Corporation}},
+  howpublished = {Online},
+  title        = {Intel\textsuperscript{\normalfont{~\textregistered}}~Architecture Instruction Set Extensions and Future Features},
+  subtitle     = {Programming Reference},
+  note         = {Ref. \# 319433-048},
+  month        = dec,
+  location     = {Santa Clara, CA, USA},
+  year         = {2022},
+  url          = {https://cdrdv2.intel.com/v1/dl/getContent/671368},
+  urldate      = {2023-01-16}
+}
+
+@InProceedings{kaiser,
+  author="Gruss, Daniel
+  and Lipp, Moritz
+  and Schwarz, Michael
+  and Fellner, Richard
+  and Maurice, Cl{\'e}mentine
+  and Mangard, Stefan",
+  editor="Bodden, Eric
+  and Payer, Mathias
+  and Athanasopoulos, Elias",
+  title="KASLR is Dead: Long Live KASLR",
+  booktitle="Engineering Secure Software and Systems",
+  year="2017",
+  publisher="Springer International Publishing",
+  address="Cham",
+  pages="161--176",
+  abstract="Modern operating system kernels employ address space layout randomization (ASLR) to prevent control-flow hijacking attacks and code-injection attacks. While kernel security relies fundamentally on preventing access to address information, recent attacks have shown that the hardware directly leaks this information. Strictly splitting kernel space and user space has recently been proposed as a theoretical concept to close these side channels. However, this is not trivially possible due to architectural restrictions of the x86 platform.",
+  doi="10.1007/978-3-319-62105-0_11"
+}
+
+@misc{as-sec,
+  author       = {{Apple Inc.}},
+  howpublished = {Online},
+  title        = {WWDC 2020},
+  subtitle     = {Explore the new system architecture of Apple silicon Macs},
+  month        = jun,
+  year         = {2020},
+  location     = {Cupertino, CA, USA},
+  url          = {https://developer.apple.com/videos/play/wwdc2020/10686},
+  urldate      = {2023-01-20}
+}
+
+@misc{apple-sec,
+  author       = {{Apple Inc.}},
+  howpublished = {Online},
+  title        = {Apple Platform Security},
+  month        = may,
+  year         = {2022},
+  location     = {Cupertino, CA, USA},
+  url          = {https://help.apple.com/pdf/security/en_US/apple-platform-security-guide.pdf},
+  urldate      = {2023-07-11}
+}
+
+@misc{apfs,
+  author       = {{Apple Inc.}},
+  howpublished = {Online},
+  title        = {Apple File System Reference},
+  month        = jun,
+  year         = {2020},
+  location     = {Cupertino, CA, USA},
+  url          = {https://developer.apple.com/support/downloads/Apple-File-System-Reference.pdf},
+  urldate      = {2023-07-11}
+}
+
+@misc{ipxe,
+  author       = {Michael Brown},
+  howpublished = {Online},
+  title        = {iPXE},
+  subtitle     = {iPXE network bootloader},
+  month        = jul,
+  year         = {2023},
+  url          = {https://github.com/ipxe/ipxe/tree/e17568ad0642490143d0c6b154c874b9b9e285bf},
+  urldate      = {2023-07-01},
+}
+
+@misc{ipxe-fix,
+  author       = {Marvin Häuser},
+  howpublished = {Online},
+  title        = {iPXE Issue \#313},
+  subtitle     = {Improve ELF to PE conversion},
+  month        = apr,
+  year         = {2021},
+  url          = {https://github.com/ipxe/ipxe/pull/313},
+  urldate      = {2023-01-20}
+}
+
+@misc{gnu-efi-fix,
+  author       = {Marvin Häuser},
+  howpublished = {Online},
+  title        = {GNU-EFI Issue \#27},
+  subtitle     = {Malformed PE image generation},
+  month        = jun,
+  year         = {2021},
+  url          = {https://sourceforge.net/p/gnu-efi/bugs/27/},
+  urldate      = {2023-05-25}
+}
+
+@misc{ms-aslr,
+  author       = {Raymond Chen},
+  organization = {{Microsoft Corporation}},
+  location     = {Redmond, WA, USA},
+  howpublished = {Online},
+  title        = {The New One Thing},
+  subtitle     = {How important is it nowadays to ensure that all my DLLs have non-conflicting base addresses?},
+  month        = jan,
+  year         = {2017},
+  url          = {https://devblogs.microsoft.com/oldnewthing/20170120-00/?p=95225},
+  urldate      = {2023-02-26}
+}
+
+@misc{ms-dll-base-addr,
+  author       = {Raymond Chen},
+  organization = {{Microsoft Corporation}},
+  location     = {Redmond, WA, USA},
+  howpublished = {Online},
+  title        = {The New One Thing},
+  subtitle     = {If relocated DLLs cannot share pages, then doesn't ASLR cause all pages to be non-shared?},
+  month        = apr,
+  year         = {2016},
+  url          = {https://devblogs.microsoft.com/oldnewthing/20160413-00/?p=93301},
+  urldate      = {2023-02-26}
+}
+
+@misc{edk2-module-writers,
+  author       = {{TianoCore} and others},
+  howpublished = {Online},
+  title        = {EDK II Module Writer's Guide},
+  note         = {DRAFT FOR REVIEW, 12/01/2020 06:45:47},
+  month        = dec,
+  year         = {2020},
+  url          = {https://github.com/tianocore-docs/edk2-ModuleWriteGuide/raw/0a06933f733c4532545ab31120917e221226c03c/draft/edk2-ModuleWriteGuide-draft.pdf},
+  urldate      = {2023-04-29}
+}
+
+@misc{hii-mail,
+  author       = {Tim Lewis},
+  organization = {{Insyde Software}},
+  howpublished = {Online},
+  title        = {edk2-devel},
+  subtitle     = {Re: [RFC] Expose HII package list via C variables},
+  note         = {Message ID 79848},
+  month        = aug,
+  year         = {2021},
+  url          = {https://edk2.groups.io/g/devel/message/79848},
+  urldate      = {2023-05-08}
+}
+
+@misc{pdb-doc,
+  author       = {{Microsoft Corporation} and others},
+  howpublished = {Online},
+  title        = {Symbol Files},
+  year         = {2021},
+  month        = jan,
+  url          = {https://github.com/MicrosoftDocs/win32/blob/59142fb13773208b101d86e0c71886de71e056b6/desktop-src/Debug/symbol-files.md},
+  urldate      = {2023-05-09}
+}
+
+@misc{pdb-doc-deprecation,
+  author       = {{Microsoft Corporation} and others},
+  howpublished = {Online},
+  title        = {microsoft-pdb},
+  subtitle     = {Update README.md},
+  month        = apr,
+  year         = {2022},
+  url          = {https://github.com/microsoft/microsoft-pdb/commit/54b4d6370d2faea6aefeaa9fd62724fcc0d47bdd},
+  urldate      = {2023-05-09}
+}
+
+@misc{macOS-security-settings,
+  author       = {{Apple Inc.}},
+  howpublished = {Online},
+  title        = {macOS User Guide},
+  subtitle     = {Change security settings on the startup disk of a Mac with Apple silicon},
+  note         = {macOS Ventura 13},
+  year         = {2022},
+  url          = {https://support.apple.com/guide/mac-help/change-security-settings-startup-disk-a-mac-mchl768f7291/mac/13.0},
+  urldate      = {2023-05-25}
+}
+
+@misc{x86s,
+  author       = {{Intel Corporation}},
+  howpublished = {Online},
+  title        = {X86-S},
+  subtitle     = {External Architectural Specification},
+  note         = {Revision 1.0. Document Number: 351407-001},
+  month        = apr,
+  location     = {Santa Clara, CA, USA},
+  year         = {2023},
+  url          = {https://cdrdv2.intel.com/v1/dl/getContent/776648},
+  urldate      = {2023-05-25}
+}
+
+@misc{slub-alloc,
+  organization = {Silicon Graphics International},
+  author       = {Christoph Lameter},
+  howpublished = {Online},
+  title        = {SLUB: The unqueued slab allocator V6},
+  month        = mar,
+  year         = {2007},
+  url          = {https://lwn.net/Articles/229096/},
+  urldate      = {2023-05-29}
+}
+
+@misc{fgkaslr,
+  author       = {Accardi, Kristen Carlson},
+  howpublished = {Online},
+  title        = {Linux kernel mailing list},
+  subtitle     = {[PATCH v3 00/10] Function Granular KASLR},
+  note         = {Message ID <20200623172327.5701-1-kristen\@linux.intel.com>},
+  month        = jun,
+  year         = {2020},
+  url          = {https://lore.kernel.org/lkml/20200623172327.5701-1-kristen@linux.intel.com/},
+  urldate      = {2023-05-29}
+}
+
+@misc{linux-wxorx,
+  author       = {Evgeniy Baskov},
+  howpublished = {Online},
+  title        = {Linux kernel mailing list},
+  subtitle     = {[PATCH v4 00/26] x86\_64: Improvements at compressed kernel stage},
+  note         = {Message ID <cover.1671098103.git.baskov\@ispras.ru>},
+  month        = dec,
+  year         = {2022},
+  url          = {https://lore.kernel.org/lkml/cover.1671098103.git.baskov@ispras.ru/},
+  urldate      = {2023-07-15}
+}
+
+@misc{linux-rust,
+  author       = {Miguel Ojeda},
+  howpublished = {Online},
+  title        = {Linux kernel mailing list},
+  subtitle     = {[PATCH 00/13] [RFC] Rust support},
+  note         = {Message ID <20210414184604.23473-1-ojeda\@kernel.org>},
+  month        = apr,
+  year         = {2021},
+  url          = {https://lore.kernel.org/lkml/20210414184604.23473-1-ojeda@kernel.org/},
+  urldate      = {2023-07-17}
+}
+
+@misc{linux-rust-git,
+  author       = {Linus Torvalds},
+  howpublished = {Online},
+  title        = {Linux kernel source tree},
+  subtitle     = {Merge tag 'rust-v6.1-rc1' of \url{https://github.com/Rust-for-Linux/linux}},
+  note         = {Commit 8aebac8},
+  month        = oct,
+  year         = {2022},
+  url          = {https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=8aebac82933ff1a7c8eede18cab11e1115e2062b},
+  urldate      = {2023-07-17}
+}
+
+@misc{cpp-borrowing-trouble,
+  author       = {Dana Jansens and \L{}ukasz Anforowicz and Chris Palmer},
+  howpublished = {Online},
+  title        = {Borrowing Trouble: The Difficulties Of A C++ Borrow-Checker},
+  month        = sep,
+  year         = {2021},
+  url          = {https://docs.google.com/document/d/e/2PACX-1vSt2VB1zQAJ6JDMaIA9PlmEgBxz2K5Tx6w2JqJNeYCy0gU4aoubdTxlENSKNSrQ2TXqPWcuwtXe6PlO/pub},
+  urldate      = {2023-07-17}
+}
+
+@book{rust-ref,
+  title        = {The Rust Reference},
+  author       = {{The Rust Project Developers}},
+  howpublished = {Online},
+  url          = {https://doc.rust-lang.org/1.70.0/reference/},
+  urldate      = {2023-06-24},
+  month        = apr,
+  year         = {2023},
+  note         = {Version 1.70.0}
+}
+
+@misc{linux-swap,
+  author       = {Chris Down},
+  howpublished = {Online},
+  title        = {In defence of swap: common misconceptions},
+  month        = jan,
+  year         = {2018},
+  url          = {https://chrisdown.name/2018/01/02/in-defence-of-swap.html},
+  urldate      = {2023-06-25}
+}
+
+@book{os-concepts,
+  author         = {Avi Silberschatz and Peter Baer Galvin and Greg Gagne},
+  publisher      = {John Wiley \& Sons},
+  title          = {Operating System Concepts},
+  isbn           = {978-1-118-06333-0},
+  month          = apr,
+  year           = {2018},
+  address        = {Hoboken, NJ, USA},
+  edition        = {Tenth},
+  url            = {https://os-book.com},
+  urldate        = {2023-07-02}
+}
+
+@book{misra-2012,
+  author         = {MISRA},
+  publisher      = {HORIBA MIRA Limited},
+  title          = {MISRA-C:2012},
+  subtitle       = {Guidelines for the use of the C language critical systems},
+  edition        = {Third},
+  address        = {Nuneaton, Warks, UK},
+  month          = feb,
+  year           = {2019}
+}
+
+@INPROCEEDINGS{rt-dynmem,
+  author={Puaut, I.},
+  booktitle={Proceedings 14th Euromicro Conference on Real-Time Systems. Euromicro RTS 2002}, 
+  title={Real-time performance of dynamic memory allocation algorithms}, 
+  year={2002},
+  volume={},
+  number={},
+  pages={41--49},
+  doi={10.1109/EMRTS.2002.1019184}
+}
+
+@article{buff-ovf,
+author = {Lhee, Kyung-Suk and Chapin, Steve J.},
+  title = {Buffer overflow and format string overflow vulnerabilities},
+  journal = {Software: Practice and Experience},
+  volume = {33},
+  number = {5},
+  pages = {423--460},
+  keywords = {buffer overflow, format string overflow, array and pointer range checking, Linux, ELF},
+  doi = {https://doi.org/10.1002/spe.515},
+  abstract = {Abstract Buffer overflow vulnerabilities are among the most widespread of security problems. Numerous incidents of buffer overflow attacks have been reported and many solutions have been proposed, but a solution that is both complete and highly practical is yet to be found. Another kind of vulnerability called format string overflow has recently been found and although not as widespread as buffer overflow, format string overflow attacks are no less dangerous. This article surveys representative techniques of exploiting buffer overflow and format string overflow vulnerabilities and their currently available defensive measures. We also describe our buffer overflow detection technique that range checks the referenced buffers at run-time. We augment executable files with the type information of automatic buffers (local variables and parameters of functions) and static buffers (global variables in the data/bss section) and maintain the sizes of allocated heap buffers in order to detect an actual occurrence of buffer overflow. We describe a simple implementation with which we currently protect vulnerable copy functions in the C library. Copyright © 2003 John Wiley \& Sons, Ltd.},
+  year = {2003}
+}
+
+@article{rec-elim,
+  author = {Kaser, Owen and Ramakrishnan, C. R. and Pawagi, Shaunak},
+  title = {On the Conversion of Indirect to Direct Recursion},
+  year = {1993},
+  issue_date = {March--Dec. 1993},
+  publisher = {Association for Computing Machinery},
+  address = {New York, NY, USA},
+  volume = {2},
+  number = {1--4},
+  issn = {1057-4514},
+  doi = {10.1145/176454.176510},
+  abstract = {Procedure inlining can be used to convert mutual recursion to direct recursion. This allows use of optimization techniques that are most easily applied to directly recursive procedures, in addition to the well-known benefits of inlining. We present tight (necessary and sufficient) conditions under which inlining can transform all mutual recursion to direct recursion, and those under which heuristics to eliminate mutual recursion always terminate. We also present a technique to eliminate mutually recursive circuits that consist of only tail calls. From this, we conclude that tail recursion elimination should be interleaved with inlining.},
+  journal = {ACM Lett. Program. Lang. Syst.},
+  month = mar,
+  pages = {151--164},
+  numpages = {14},
+  keywords = {inline substitution, call graphs, procedure inlining, mutual recursion, theory}
+}
+
+@misc{mem-tag,
+  author       = {Joe Bialek and Ken Johnson and Matt Miller and Tony Chen},
+  organization = {{Microsoft Corporation}},
+  howpublished = {Online},
+  title        = {Security Analysis of Memory Tagging},
+  month        = mar,
+  year         = {2020},
+  url          = {https://github.com/microsoft/MSRC-Security-Research/blob/4ef90e324189e511638952afd6102a6c59e5af11/papers/2020/Security%20analysis%20of%20memory%20tagging.pdf},
+  urldate      = {2023-07-01}
+}
+
+@misc{gpz-zero-days,
+  author       = {Maddie Stone},
+  organization = {{Google Project Zero}},
+  howpublished = {Online},
+  title        = {The More You Know, The More You Know You Don't Know},
+  subtitle     = {A Year in Review of 0-days Used In-the-Wild in 2021},
+  month        = apr,
+  year         = 2022,
+  url          = {https://googleprojectzero.blogspot.com/2022/04/the-more-you-know-more-you-know-you.html},
+  urldate      = {2023-07-01}
+}
+
+@misc{apple-mem-alloc,
+  author       = {{Apple Security Engineering and Architecture (SEAR)}},
+  organization = {{Apple Inc.}},
+  howpublished = {Online},
+  title        = {Towards the next generation of XNU memory safety: kalloc\_type},
+  month        = oct,
+  year         = {2022},
+  url          = {https://security.apple.com/blog/towards-the-next-generation-of-xnu-memory-safety/},
+  urldate      = {2023-07-01}
+}
+
+@misc{apple-mem-alloc-ex,
+  author       = {{Apple Security Engineering and Architecture (SEAR)}},
+  organization = {{Apple Inc.}},
+  howpublished = {Online},
+  title        = {What if we had the SockPuppet vulnerability in iOS 16?},
+  month        = may,
+  year         = {2023},
+  url          = {https://security.apple.com/blog/what-if-we-had-sockpuppet-in-ios16/},
+  urldate      = {2023-07-01}
+}
+
+@InProceedings{10.1007/978-3-642-33338-5_5,
+author="van der Veen, Victor
+and dutt-Sharma, Nitish
+and Cavallaro, Lorenzo
+and Bos, Herbert",
+editor="Balzarotti, Davide
+and Stolfo, Salvatore J.
+and Cova, Marco",
+title="Memory Errors: The Past, the Present, and the Future",
+booktitle="Research in Attacks, Intrusions, and Defenses",
+year="2012",
+publisher="Springer Berlin Heidelberg",
+address="Berlin, Heidelberg",
+pages="86--106",
+abstract="Memory error exploitations have been around for over 25 years and still rank among the top 3 most dangerous software errors. Why haven't we been able to stop them? Given the host of security measures on modern machines, are we less vulnerable than before, and can we expect to eradicate memory error problems in the near future? In this paper, we present a quarter century worth of memory errors: attacks, defenses, and statistics. A historical overview provides insights in past trends and developments, while an investigation of real-world vulnerabilities and exploits allows us to answer on the significance of memory errors in the foreseeable future.",
+doi="10.1007/978-3-642-33338-5_5"
+}
+
+@misc{libc-zero-byte,
+  author       = {Solar Designer},
+  howpublished = {Online},
+  title        = {Getting around non-executable stack (and fix)},
+  month        = aug,
+  year         = {1997},
+  url          = {https://seclists.org/bugtraq/1997/Aug/63},
+  urldate      = {2023-07-02}
+}
+
+@article{libc-ex,
+  author          = {Nergal},
+  editor          = {Phrack Staff},
+  journal         = {Phrack Magazine},
+  number          = {4},
+  title           = {Advanced return-into-lib(c) exploits (PaX case study)},
+  volume          = {11},
+  issue           = {58},
+  month           = dec,
+  year            = {2001},
+  url             = {http://phrack.org/issues/58/4.html},
+  urldate         = {2023-07-02}
+}
+
+@misc{linux-arm-bti,
+  author       = {Linus Torvalds},
+  howpublished = {Online},
+  title        = {Linux kernel source tree},
+  subtitle     = {Merge tag 'arm64-upstream' of \url{git://git.kernel.org/pub/scm/linux/kernel/git/arm64/linux}},
+  note         = {Commit 533b220},
+  month        = jun,
+  year         = {2020},
+  url          = {https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=533b220f7be4e461a5222a223d169b42856741ef},
+  urldate      = {2023-07-03}
+}
+
+@misc{clang-csc,
+  author       = {The Clang Team},
+  howpublished = {Online},
+  title        = {Clang 16.0.0 documentation},
+  subtitle     = {ShadowCallStack},
+  month        = mar,
+  year         = {2023},
+  url          = {https://releases.llvm.org/16.0.0/tools/clang/docs/ShadowCallStack.html},
+  urldate      = {2023-07-03}
+}
+
+@misc{asan,
+  author       = {The Clang Team},
+  howpublished = {Online},
+  title        = {Clang 16.0.0 documentation},
+  subtitle     = {AddressSanitizer},
+  month        = mar,
+  year         = {2023},
+  url          = {https://releases.llvm.org/16.0.0/tools/clang/docs/AddressSanitizer.html},
+  urldate      = {2023-07-03}
+}
+
+@misc{sanitizer-cov,
+  author       = {The Clang Team},
+  howpublished = {Online},
+  title        = {Clang 16.0.0 documentation},
+  subtitle     = {SanitizerCoverage},
+  month        = mar,
+  year         = {2023},
+  url          = {https://releases.llvm.org/16.0.0/tools/clang/docs/SanitizerCoverage.html},
+  urldate      = {2023-07-06}
+}
+
+@inproceedings {asan-paper,
+	author = {Konstantin Serebryany and Derek Bruening and Alexander Potapenko and Dmitriy Vyukov},
+	title = {{AddressSanitizer}: A Fast Address Sanity Checker},
+	booktitle = {2012 USENIX Annual Technical Conference (USENIX ATC 12)},
+	year = {2012},
+	isbn = {978-931971-93-5},
+	address = {Boston, MA},
+	pages = {309--318},
+	url = {https://www.usenix.org/conference/atc12/technical-sessions/presentation/serebryany},
+	publisher = {USENIX Association},
+	month = jun,
+}
+
+@misc{ubsan,
+  author       = {The Clang Team},
+  howpublished = {Online},
+  title        = {Clang 16.0.0 documentation},
+  subtitle     = {UndefinedBehaviorSanitizer},
+  month        = mar,
+  year         = {2023},
+  url          = {https://releases.llvm.org/16.0.0/tools/clang/docs/UndefinedBehaviorSanitizer.html},
+  urldate      = {2023-07-03}
+}
+
+@misc{libfuzzer,
+  author       = {LLVM Project},
+  howpublished = {Online},
+  title        = {libFuzzer},
+  subtitle     = {a library for coverage-guided fuzz testing},
+  month        = mar,
+  year         = {2023},
+  url          = {https://releases.llvm.org/16.0.0/docs/LibFuzzer.html},
+  urldate      = {2023-07-03}
+}
+
+@misc{audk,
+  author       = {Acidanthera},
+  howpublished = {Online},
+  title        = {Acidanthera UEFI Development Kit},
+  note         = {Commit 6ca1d30},
+  month        = jun,
+  year         = {2023},
+  url          = {https://github.com/acidanthera/audk/tree/6ca1d30f606125df8f0b3ec35eebce93138bf3c9},
+  urldate      = {2023-07-03}
+}
+
+@misc{opencore,
+  author       = {Acidanthera},
+  howpublished = {Online},
+  title        = {OpenCore bootloader},
+  note         = {Commit dc182df},
+  month        = jun,
+  year         = {2023},
+  url          = {https://github.com/acidanthera/OpenCorePkg/tree/dc182df42c519b70ff223bdbcd4d6de1455be362},
+  urldate      = {2023-07-03}
+}
+
+@misc{ocbuild,
+  author       = {Acidanthera},
+  howpublished = {Online},
+  title        = {ocbuild},
+  note         = {Commit 2620958},
+  month        = jun,
+  year         = {2023},
+  url          = {https://github.com/acidanthera/ocbuild/tree/2620958c4e5b45d1555f846d589580271e8d70e7},
+  urldate      = {2023-07-03}
+}
+
+@misc{ocbinarydata-winpe,
+  author       = {Acidanthera},
+  howpublished = {Online},
+  title        = {OcBinaryData},
+  note         = {Commit 4e7e1b7},
+  month        = jun,
+  year         = {2023},
+  url          = {https://github.com/acidanthera/OcBinaryData/releases/tag/images-winpe-1.0},
+  urldate      = {2023-07-03}
+}
+
+@misc{docker,
+  author       = {Docker Inc.},
+  howpublished = {Online},
+  title        = {Docker},
+  url          = {https://www.docker.com},
+  urldate      = {2023-07-03}
+}
+
+@misc{oci,
+  author       = {The Linux Foundation\textsuperscript{\normalfont{~\textregistered}}},
+  howpublished = {Online},
+  title        = {Open Container Initiative},
+  url          = {https://opencontainers.org},
+  urldate      = {2023-07-03}
+}
+
+@misc{thesis-git,
+  author       = {Marvin H{\"a}user},
+  howpublished = {Online},
+  title        = {MastersThesis},
+  subtitle     = {Supplementary material for the Master's Thesis 'Designing a Secure and Space-Efficient Executable File Format for the Unified Extensible Firmware Interface'},
+  month        = jul,
+  year         = {2023},
+  url          = {https://github.com/mhaeuser/MastersThesis/},
+  urldate      = {2023-07-03}
+}
+
+@misc{repro-get,
+  author       = {Suda, Akihiro and others},
+  howpublished = {Online},
+  title        = {repro-get},
+  subtitle     = {Reproducible apt/dnf/apk/pacman, with content-addressing},
+  note         = {Commit 036c30e},
+  month        = may,
+  year         = {2023},
+  url          = {https://github.com/reproducible-containers/repro-get/tree/036c30e0c71d71bd8df72b5009934c686db6719b},
+  urldate      = {2023-07-03}
+}
+
+@misc{qemu,
+  author       = {QEMU},
+  howpublished = {Online},
+  title        = {QEMU},
+  subtitle     = {A generic and open source machine emulator and virtualizer},
+  url          = {https://www.qemu.org},
+  urldate      = {2023-07-03}
+}
+
+@InProceedings{frama-c,
+  author="Cuoq, Pascal
+  and Kirchner, Florent
+  and Kosmatov, Nikolai
+  and Prevosto, Virgile
+  and Signoles, Julien
+  and Yakobowski, Boris",
+  editor="Eleftherakis, George
+  and Hinchey, Mike
+  and Holcombe, Mike",
+  title="Frama-C",
+  booktitle="Software Engineering and Formal Methods",
+  year="2012",
+  publisher="Springer Berlin Heidelberg",
+  address="Berlin, Heidelberg",
+  pages="233--247",
+  abstract="Frama-C is a source code analysis platform that aims at conducting verification of industrial-size C programs. It provides its users with a collection of plug-ins that perform static analysis, deductive verification, and testing, for safety- and security-critical software. Collaborative verification across cooperating plug-ins is enabled by their integration on top of a shared kernel and datastructures, and their compliance to a common specification language. This foundational article presents a consolidated view of the platform, its main and composite analyses, and some of its industrial achievements.",
+  isbn="978-3-642-33826-7"
+}
+
+@misc{acsl,
+  author       = {Patrick Baudin and Pascal Cuoq and Jean-Christophe Filli{\^a}tre and Claude March{\'e} and Benjamin Monate and Yannick Moy and Virgile Prevosto},
+  organization = {{CEA LIST, Inria}},
+  howpublished = {Online},
+  title        = {ANSI/ISO C Specification Language},
+  note         = {Version 1.19},
+  url          = {https://frama-c.com/download/acsl-1.19.pdf},
+  urldate      = {2023-07-12},
+  month        = jun,
+  year         = {2023}
+}
+
+@inproceedings{cuoq:hal-02263407,
+  TITLE = {{Fan-C, a Frama-C plug-in for data flow verification}},
+  AUTHOR = {Cuoq, Pascal and Delmas, David and Duprat, St{\'e}phane and Lamiel, Victoria Moya},
+  URL = {https://hal.science/hal-02263407},
+  BOOKTITLE = {{Embedded Real Time Software and Systems (ERTS2012)}},
+  ADDRESS = {Toulouse, France},
+  YEAR = {2012},
+  MONTH = Feb,
+  KEYWORDS = {data flow analysis ; avionics software ; DO-178B ; industrial application ; static analysis ; Abstract interpretation ; value anal- ysis},
+  PDF = {https://hal.science/hal-02263407/file/5C-3.pdf},
+  HAL_ID = {hal-02263407},
+  HAL_VERSION = {v1},
+}
+
+@inproceedings{compcert,
+  TITLE = {{CompCert - A Formally Verified Optimizing Compiler}},
+  AUTHOR = {Leroy, Xavier and Blazy, Sandrine and K{\"a}stner, Daniel and Schommer, Bernhard and Pister, Markus and Ferdinand, Christian},
+  URL = {https://inria.hal.science/hal-01238879},
+  BOOKTITLE = {{ERTS 2016: Embedded Real Time Software and Systems, 8th European Congress}},
+  ADDRESS = {Toulouse, France},
+  ORGANIZATION = {{SEE}},
+  YEAR = {2016},
+  MONTH = Jan,
+  PDF = {https://inria.hal.science/hal-01238879/file/erts2016_compcert.pdf},
+  HAL_ID = {hal-01238879},
+  HAL_VERSION = {v1},
+  urldate      = {2023-07-03}
+}
+
+@misc{coq,
+  author       = {The Coq Development Team},
+  howpublished = {Online},
+  title        = {The Coq Reference Manual},
+  note         = {Release 8.17.1},
+  month        = jun,
+  year         = {2023},
+  url          = {https://github.com/coq/coq/releases/download/V8.17.1/coq-8.17.1-reference-manual.pdf},
+  urldate      = {2023-07-08}
+}
+
+@misc{isabelle,
+  author       = {Makarius Wenzel and Clemens Ballarin and Stefan Berghofer and Jasmin Blanchette and Timothy Bourke and Lukas Bulwahn and Amine Chaieb and Lucas Dixon and Florian Haftmann and Brian Huffman and Lars Hupel and Gerwin Klein and Alexander Krauss and Ondřej Kunčar and Andreas Lochbihler and Tobias Nipkow and Lars Noschinski and David von Oheimb and Larry Paulson and Sebastian Skalberg and Christian Sternagel and Dmitriy Traytel},
+  howpublished = {Online},
+  title        = {The Isabelle/Isar Reference Manual},
+  month        = oct,
+  year         = {2022},
+  url          = {https://isabelle.in.tum.de/dist/Isabelle2022/doc/isar-ref.pdf},
+  urldate      = {2023-07-08}
+}
+
+@incollection{sorensen2006lectures,
+  series = {Studies in Logic and the Foundations of Mathematics},
+  edition        = {First},
+  booktitle={Lectures on the Curry-Howard isomorphism},
+  author={S{\o}rensen, Morten Heine and Urzyczyn, Pawel},
+  volume = {149},
+  month = jul,
+  year={2006},
+  publisher={Elsevier},
+  address={Amsterdam, NH, NL},
+  isbn={978-0-444-52077-7}
+}
+
+@misc{gh-actions,
+  author       = {GitHub, Inc.},
+  howpublished = {Online},
+  title        = {GitHub Actions},
+  url          = {https://github.com/features/actions},
+  urldate      = {2023-07-05}
+}
+
+@misc{elf-relr,
+  author       = {Rahul Chaudhry},
+  howpublished = {Online},
+  title        = {Generic System V Application Binary Interface},
+  subtitle     = {Proposal for a new section type SHT\_RELR},
+  month        = dec,
+  year         = {2017},
+  url          = {https://groups.google.com/g/generic-abi/c/bX460iggiKg},
+  urldate      = {2023-07-06}
+}
+
+@misc{intel-fsp,
+  author       = {{Intel Corporation}},
+  howpublished = {Online},
+  title        = {Intel\textsuperscript{\normalfont{~\textregistered}} Firmware Support Package (FSP)},
+  note         = {Commit 3beceb0},
+  month        = jun,
+  year         = {2023},
+  url          = {https://github.com/intel/FSP/tree/3beceb01f90dbdbe7781c7fa43ecc928cd68d2f0},
+}
+
+@misc{mixed-mode-1,
+  author       = {Nate DeSimone},
+  organization = {{Intel Corporation}},
+  howpublished = {Online},
+  title        = {edk2-discuss},
+  subtitle     = {Re: [edk2-devel] [edk2-discuss] GSoC Proposal},
+  note         = {Message ID 956},
+  month        = apr,
+  year         = {2022},
+  url          = {https://edk2.groups.io/g/discuss/message/955},
+  urldate      = {2023-07-06}
+}
+
+@misc{mixed-mode-2,
+  author       = {Andrew Fish},
+  organization = {{Apple Inc.}},
+  howpublished = {Online},
+  title        = {edk2-discuss},
+  subtitle     = {Re: [edk2-devel] [edk2-discuss] GSoC Proposal},
+  note         = {Message ID 956},
+  month        = apr,
+  year         = {2022},
+  url          = {https://edk2.groups.io/g/discuss/message/956},
+  urldate      = {2023-07-06}
+}
+
+@book{gcc,
+  author         = {{Richard M. Stallman} and {the GCC Developer Community}},
+  publisher      = {GNU Press},
+  address        = {Boston MA, USA},
+  title          = {Using the GNU Compiler Collection},
+  subtitle       = {For gcc version 13.1.0},
+  month          = apr,
+  year           = {2023},
+  url            = {https://gcc.gnu.org/onlinedocs/gcc-13.1.0/gcc.pdf},
+  urldate        = {2023-07-06}
+}
+
+@book{ld,
+  author         = {Chamberlain, Steve and Taylor, Ian Lance},
+  editor         = {Jeffrey Osier},
+  publisher      = {Free Software Foundation, Inc.},
+  title          = {The GNU linker},
+  note           = {Version 2.40},
+  series         = {GNU Binutils},
+  month          = jan,
+  year           = {2023},
+  url            = {https://sourceware.org/binutils/docs-2.40/ld.pdf},
+  urldate        = {2023-07-13}
+}
+
+@misc{lcov,
+  author       = {Linux Test Project},
+  howpublished = {Online},
+  title        = {LCOV},
+  note         = {Commit 938c8c7},
+  month        = jul,
+  year         = {2023},
+  url          = {https://github.com/linux-test-project/lcov/tree/938c8c753aa61e87300f8e5f74447066d185829e},
+  urldate      = {2023-07-06}
+}
+
+@misc{null-ref-presentation,
+  author       = {Tony Hoare},
+  howpublished = {Online},
+  title        = {QCon London 2009},
+  subtitle     = {Null References: The Billion Dollar Mistake},
+  Note         = {Presentation abstract},
+  month        = mar,
+  year         = {2009},
+  url          = {https://qconlondon.com/london-2009/qconlondon.com/london-2009/presentation/Null%2bReferences_%2bThe%2bBillion%2bDollar%2bMistake.html},
+  urldate      = {2023-07-07}
+}
+
+@book{fuzzingbook2023,
+  author = {Andreas Zeller and Rahul Gopinath and Marcel B{\"o}hme and Gordon Fraser and Christian Holler},
+  title = {The Fuzzing Book},
+  month          = jul,
+  year = {2023},
+  publisher = {CISPA Helmholtz Center for Information Security},
+  address = {Saarbr{\"u}cken, SL, Germany},
+  url = {https://github.com/uds-se/fuzzingbook/tree/5cbdedd02abee0aab9341afcf518b290217b8309},
+  note           = {Commit 5cbdedd},
+  urldate = {2023-07-07}
+}
+
+@inproceedings{10.1145/3183440.3183494,
+  author = {Wang, Mingzhe and Liang, Jie and Chen, Yuanliang and Jiang, Yu and Jiao, Xun and Liu, Han and Zhao, Xibin and Sun, Jiaguang},
+  title = {SAFL: Increasing and Accelerating Testing Coverage with Symbolic Execution and Guided Fuzzing},
+  year = {2018},
+  isbn = {9781450356633},
+  publisher = {Association for Computing Machinery},
+  address = {New York, NY, USA},
+  url = {https://doi.org/10.1145/3183440.3183494},
+  doi = {10.1145/3183440.3183494},
+  booktitle = {Proceedings of the 40th International Conference on Software Engineering: Companion Proceeedings},
+  pages = {61--64},
+  numpages = {4},
+  keywords = {greybox fuzzing, software testing, symbolic execution},
+  location = {Gothenburg, Sweden}, series = {ICSE '18}
+}
+
+@INPROCEEDINGS{9394032,
+  author={Vishnyakov, Alexey and Fedotov, Andrey and Kuts, Daniil and Novikov, Alexander and Parygina, Darya and Kobrin, Eli and Logunova, Vlada and Belecky, Pavel and Kurmangaleev, Shamil},
+  booktitle={2020 Ivannikov Ispras Open Conference (ISPRAS)}, 
+  title={Sydr: Cutting Edge Dynamic Symbolic Execution}, 
+  year={2020},
+  volume={},
+  number={},
+  pages={46-54},
+  doi={10.1109/ISPRAS51486.2020.00014}
+}
+
+@ARTICLE{1674817,
+  author={Shedletsky},
+  journal={IEEE Transactions on Computers}, 
+  title={Comment on the Sequential and Indeterminate Behavior of an End-Around-Carry Adder}, 
+  year={1977},
+  volume={C-26},
+  number={3},
+  pages={271--272},
+  doi={10.1109/TC.1977.1674817}
+}
+
+@ARTICLE{8766229,
+  author={},
+  journal={IEEE Std 754-2019 (Revision of IEEE 754-2008)}, 
+  title={IEEE Standard for Floating-Point Arithmetic}, 
+  year={2019},
+  volume={},
+  number={},
+  pages={1-84},
+  doi={10.1109/IEEESTD.2019.8766229}
+}
+
+@misc{pei-mem-perms,
+  author       = {Ard Biesheuvel},
+  organization = {{Google LLC}},
+  howpublished = {Online},
+  title        = {edk2-devel},
+  subtitle     = {[PATCH v2 0/7] Add PPI to manage PEI phase memory attributes},
+  note         = {Message ID 105649},
+  month        = jun,
+  year         = {2023},
+  url          = {https://edk2.groups.io/g/devel/message/105649},
+  urldate      = {2023-05-09}
+}
+
+@book{levine2000linkers,
+  title={Linkers and Loaders},
+  edition={First},
+  author={Levine, John R.},
+  isbn={978-1-558-60496-4},
+  month=oct,
+  year={1999},
+  publisher={Elsevier},
+  address={Amsterdam, NH, NL}
+}
+
+@misc{eset-lojax,
+  author       = {{ESET, spol. s r.o.}},
+  howpublished = {Online},
+  title        = {LoJax},
+  subtitle     = {First UEFI rootkit found in the wild, courtesy of the Sednit group},
+  month        = sep,
+  year         = {2018},
+  address      = {Bratislava, SK},
+  url          = {https://www.welivesecurity.com/wp-content/uploads/2018/09/ESET-LoJax.pdf},
+  urldate      = {2023-07-11}
+}
+
+@misc{blacklotus,
+  author       = {Martin Smol{\'a}r},
+  organization = {{ESET, spol. s r.o.}},
+  howpublished = {Online},
+  title        = {BlackLotus UEFI bootkit: Myth confirmed},
+  month        = mar,
+  year         = {2023},
+  address      = {Bratislava, SK},
+  url          = {https://www.welivesecurity.com/2023/03/01/blacklotus-uefi-bootkit-myth-confirmed/},
+  urldate      = {2023-07-11}
+}
+
+@Article{app9142928,
+  AUTHOR = {Marco-Gisbert, Hector and Ripoll Ripoll, Ismael},
+  TITLE = {Address Space Layout Randomization Next Generation},
+  JOURNAL = {Applied Sciences},
+  VOLUME = {9},
+  YEAR = {2019},
+  NUMBER = {14},
+  ARTICLE-NUMBER = {2928},
+  URL = {https://www.mdpi.com/2076-3417/9/14/2928},
+  ISSN = {2076-3417},
+  ABSTRACT = {Systems that are built using low-power computationally-weak devices, which force developers to favor performance over security; which jointly with its high connectivity, continuous and autonomous operation makes those devices specially appealing to attackers. ASLR (Address Space Layout Randomization) is one of the most effective mitigation techniques against remote code execution attacks, but when it is implemented in a practical system its effectiveness is jeopardized by multiple constraints: the size of the virtual memory space, the potential fragmentation problems, compatibility limitations, etc. As a result, most ASLR implementations (specially in 32-bits) fail to provide the necessary protection. In this paper we propose a taxonomy of all ASLR elements, which categorizes the entropy in three dimensions: (1) how, (2) when and (3) what; and includes novel forms of entropy. Based on this taxonomy we have created, ASLRA, an advanced statistical analysis tool to assess the effectiveness of any ASLR implementation. Our analysis show that all ASLR implementations suffer from several weaknesses, 32-bit systems provide a poor ASLR, and OS X has a broken ASLR in both 32- and 64-bit systems. This is jeopardizing not only servers and end users devices as smartphones but also the whole IoT ecosystem. To overcome all these issues, we present ASLR-NG, a novel ASLR that provides the maximum possible absolute entropy and removes all correlation attacks making ASLR-NG the best solution for both 32- and 64-bit systems. We implemented ASLR-NG in the Linux kernel 4.15. The comparative evaluation shows that ASLR-NG overcomes PaX, Linux and OS X implementations, providing strong protection to prevent attackers from abusing weak ASLRs.},
+  DOI = {10.3390/app9142928}
+}
+
+@misc{merkle-trees,
+  author       = {Merkle, Ralph C.},
+  organization = {United States Patent and Trademark Office},
+  title        = {Method of providing digital signatures},
+  titleaddon   = {United States Patent US 4,309,569},
+  month        = jan,
+  year         = {1982}
+}
+
+@misc{mu-basecore,
+  author       = {{Microsoft Corporation} and others},
+  howpublished = {Online},
+  title        = {Project Mu BaseCore},
+  note         = {Commit 347cce4},
+  month        = jul,
+  year         = {2023},
+  url          = {https://github.com/microsoft/mu_basecore/tree/347cce4949a5073b284d7d73d307797659033ff0},
+  urldate      = {2023-07-14}
+}
+
+@misc{edk2-memory-safety,
+  author       = {Yao, Jiewen and Zimmer, Vincent J. and Wang, Jian},
+  organization = {TianoCore},
+  howpublished = {Online},
+  title        = {A Tour Beyond BIOS},
+  subtitle     = {Security Enhancement to Mitigate Buffer Overflow in UEFI},
+  note         = {Revision 02.0},
+  month        = mar,
+  year         = {2018},
+  url          = {https://github.com/tianocore-docs/ATBB-Mitigate_Buffer_Overflow_in_UEFI/blob/59e6799291edfb0686e9b20f4bc1251deafa041f/draft/ATBB-Mitigate_Buffer_Overflow_in_UEFI-draft.pdf},
+  urldate      = {2023-07-14}
+}
+
+@misc{uefi-secure-boot,
+  author       = {Yao, Jiewen and Zimmer, Vincent J.},
+  organization = {TianoCore},
+  howpublished = {Online},
+  title        = {Understanding the UEFI Secure Boot Chain},
+  note         = {Revision 01.0},
+  month        = jun,
+  year         = {2019},
+  url          = {https://github.com/tianocore-docs/Understanding_UEFI_Secure_Boot_Chain/blob/6921b9415def5260a3170e0dcbe08eadf012b0a9/release-1.00/Understanding_UEFI_Secure_Boot_Chain-release-1.00.pdf},
+  urldate      = {2023-07-14}
+}
+
+@misc{grub-nx-bug,
+  author       = {Gerd Hoffmann},
+  howpublished = {Online},
+  title        = {Red Hat Bugzilla},
+  subtitle     = {grub2 memory allocation is \*still\* broken},
+  note         = {Bug 2149020},
+  month        = nov,
+  year         = {2022},
+  url          = {https://bugzilla.redhat.com/show_bug.cgi?id=2149020},
+  urldate      = {2023-07-15}
+}
+
+@misc{edk2-wxorx,
+  author       = {Marvin H{\"a}user},
+  howpublished = {Online},
+  title        = {TianoCore Bugzilla},
+  subtitle     = {Enforce W\^{}X design principles},
+  note         = {Bug 3326},
+  month        = apr,
+  year         = {2021},
+  url          = {https://bugzilla.tianocore.org/show_bug.cgi?id=3326},
+  urldate      = {2023-07-15}
+}
+
+@misc{edk2-granular-pe,
+  author       = {Marvin H{\"a}user},
+  howpublished = {Online},
+  title        = {TianoCore Bugzilla},
+  subtitle     = {DxeCore: No support for granular PE section permissions},
+  note         = {Bug 3329},
+  month        = apr,
+  year         = {2021},
+  url          = {https://bugzilla.tianocore.org/show_bug.cgi?id=3329},
+  urldate      = {2023-07-15}
+}
+
+@misc{ryzen-ram-init,
+  author       = {{the coreboot project}},
+  howpublished = {Online},
+  title        = {coreboot documentation},
+  subtitle     = {AMD Family 17h in coreboot},
+  note         = {4.20},
+  month        = may,
+  year         = {2023},
+  url          = {https://doc.coreboot.org/soc/amd/family17h.html},
+  urldate      = {2023-07-15}
+}
+
+@misc{libfuzzer-coll,
+  author       = {Aristotelis Koutsouridis},
+  organization = {ForAllSecure},
+  howpublished = {Online},
+  title        = {Generating a Tiny Test Suite with Greedy Set Cover Minimization},
+  month        = oct,
+  year         = {2021},
+  url          = {https://forallsecure.com/blog/efficient-corpus-minimization},
+  urldate      = {2023-07-16}
+}
+
+@INPROCEEDINGS{8418631,
+  author={Gan, Shuitao and Zhang, Chao and Qin, Xiaojun and Tu, Xuwen and Li, Kang and Pei, Zhongyu and Chen, Zuoning},
+  booktitle={2018 IEEE Symposium on Security and Privacy (SP)}, 
+  title={CollAFL: Path Sensitive Fuzzing}, 
+  year={2018},
+  volume={},
+  number={},
+  pages={679--696},
+  doi={10.1109/SP.2018.00040}
+}
+
+@misc{rustbelt,
+  author       = {Max Planck Institute for Software Systems},
+  howpublished = {Online},
+  title        = {ERC Project ``RustBelt''},
+  month        = apr,
+  year         = {2021},
+  url          = {https://plv.mpi-sws.org/rustbelt/},
+  urldate      = {2023-07-17}
+}
+
+@misc{rust-types-team,
+  author       = {Jack Huey},
+  howpublished = {Online},
+  title        = {Rust Blog},
+  subtitle     = {Officially announcing the types team},
+  month        = jan,
+  year         = {2023},
+  url          = {https://blog.rust-lang.org/2023/01/20/types-announcement.html},
+  urldate      = {2023-07-17}
 }

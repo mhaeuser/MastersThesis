@@ -1,0 +1,16 @@
+\begin{table}[htb]
+  \centering
+  \begin{tabular}{l c c c}
+    \toprule
+    \multirow{2}{*}[-2pt]{\textbf{Decoding}} & \multicolumn{3}{c}{\textbf{Code Size} [byte]}\\
+    \cmidrule{2-4}
+    & \textbf{x86-64} & \textbf{ARM64} & \textbf{RISC-V}\\
+    \midrule
+    Naive & 38 & 52 & 32\\
+    Shift-Assisted & 37 & 44 & 32\\
+    \bottomrule
+  \end{tabular}
+  \caption{Bit Field Decoding Code Size Comparison.}
+  \label{fig:field_flag_dec_sizes}
+  \caption*{Comparison of code sizes for naive and shift-assisted bit field decoding of three flags. For the source data, see \Cref{sec:flag_dec_opt}.}
+\end{table}

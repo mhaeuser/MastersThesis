@@ -1,0 +1,44 @@
+\begin{table}[!htb]
+  \centering
+  \caption{UE Parsing Fuzz-Testing Coverage.}
+  \hfill\\
+  \begin{tabular}{l c c c}
+    \toprule
+    \multirow{2}{*}[-2pt]{\textbf{File}} & \multicolumn{3}{c}{\textbf{Coverage} [\%]}\\
+    \cmidrule{2-4}
+    & \textbf{Lines} & \textbf{Functions} & \textbf{Branches}\\
+    \midrule
+    TestUe/Ue.c & 100 & 100 & 100\\
+    TestUefiImage/UefiImage.c & 100 & 100 & 100\\
+    BaseUeImageLib/UeImageLib.c & 100 & 100 & 100\\
+    BaseUefiImageLib/CommonSupport.c & 100 & 100 & 100\\
+    BaseUefiImageLib/UeSupport.c & 100 & 100 & 100\\
+    \midrule
+    \textbf{Total} & 100 & 100 & 100\\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[!htb]
+  \centering
+  \caption{UE Conversion Fuzz-Testing Coverage.}
+  \hfill\\
+  \begin{tabular}{l c c c}
+    \toprule
+    \multirow{2}{*}[-2pt]{\textbf{File}} & \multicolumn{3}{c}{\textbf{Coverage} [\%]}\\
+    \cmidrule{2-4}
+    & \textbf{Lines} & \textbf{Functions} & \textbf{Branches}\\
+    \midrule
+    TestEmit/Emit.c & 100 & 100 & 100\\
+    ImageTool/DynamicBuffer.c & 94.4 & 100 & 88.9\\
+    ImageTool/Image.c & 99.1 & 100 & 98.9\\
+    ImageTool/ImageToolEmit.c & 100 & 100 & 100\\
+    ImageTool/PeScan.c & 95.3 & 100 & 94.3\\
+    ImageTool/UeEmit.c & 97.8 & 100 & 96.5\\
+    ImageTool/UeScan.c & 100 & 100 & 100\\
+    ImageTool/UefiImageScan.c & 98.1 & 100 & 97.6\\
+    \midrule
+    \textbf{Total} & 98.1 & 100 & 97.3\\
+    \bottomrule
+  \end{tabular}
+\end{table}

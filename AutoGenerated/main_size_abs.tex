@@ -1,0 +1,28 @@
+\begin{table}[htbp]
+  \centering
+  \begin{tabular}{l l l c c c}
+    \toprule
+    \multirow{2}{*}[-2pt]{\textbf{Platform}} & \multirow{2}{*}[-2pt]{\textbf{Arch}} & \multirow{2}{*}[-2pt]{\textbf{Toolchain}} & \multicolumn{3}{c}{\textbf{Saving} [byte]}\\
+    \cmidrule{4-6}
+     & & & \textbf{Min.} & \textbf{Avg.} & \textbf{Max.}\\
+    \midrule
+    \multirow{4}{*}[-2pt]{\gls{OVMF}} & \multirow{2}{*}{IA32} & GCC5 & 560 & 672.24 & 1,376\\
+     & & CLANGDWARF & 536 & 669.80 & 1,384\\
+    \cmidrule{2-6}
+     & \multirow{2}{*}{X64} & GCC5 & 504 & 744.61 & 4,920\\
+     & & CLANGDWARF & 432 & 758.93 & 4,960\\
+    \midrule
+    \multirow{4}{*}[-2pt]{\gls{ArmVirtQemu}} & \multirow{2}{*}{ARM} & GCC5 & 528 & 649.32 & 1,208\\
+     & & CLANGDWARF & 552 & 666.64 & 1,376\\
+    \cmidrule{2-6}
+     & \multirow{2}{*}{AARCH64} & GCC5 & 472 & 753.00 & 4,952\\
+     & & CLANGDWARF & 480 & 768.36 & 4,760\\
+    \midrule
+    \midrule
+    \textbf{Average} & & & 508.0 & 710.36 & 3,117.0\\
+    \bottomrule
+  \end{tabular}
+  \caption{Platform PE-to-UE Absolute Space-Saving.}
+  \label{fig:abs_space_sav}
+  \caption*{Absolute module space-savings from the \glsxtrshort{PE}-to-\glsxtrshort{UE} conversion per platform, architecture, and toolchain. All modules have been compiled in \texttt{RELEASE} mode. For the source data, see \Cref{chap:space_savings}.}
+\end{table}

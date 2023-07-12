@@ -1,14 +1,20 @@
 \documentclass[
 	bibliography=totoc, % Add the bibliography to the TOC
 	listof=totoc,      % Add the "List of *" to the TOC
-	%final              % Set document status as FINAL
+	final              % Set document status as FINAL
 	%draft              % Set document status as DRAFT: Faster, skips some stuff (e.g. referencing)
 ]{scrbook}              % scrbook defaults: a4paper, twoside, openright, 11pt
+
+\overfullrule 5pt
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Input encoding: UTF8
 \usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+\usepackage[table]{xcolor}
+\usepackage{amsmath}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Requirements
@@ -16,6 +22,11 @@
 % TIKZ
 \usepackage{tikz}
     \usetikzlibrary{external} % Externalizes Tikz graphics - speeds up compilation if unchanged.
+
+\usepackage{subcaption}
+\usepackage{multirow}
+
+\addtokomafont{disposition}{\rmfamily}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Page Geometry Layout
@@ -42,7 +53,7 @@
     ]{scrlayer-scrpage}
 
 % Style
-\renewcommand*{\chaptermarkformat}{\chapapp~\thechapter:\enskip}% Put "chapter" oder "appendix" in front of the chapter number in running head
+\renewcommand*{\chaptermarkformat}{\chapapp~\thechapter:\enskip}% Put "chapter" or "appendix" in front of the chapter number in running head
 \clearpairofpagestyles
 \ohead{\headmark}
 \automark[chapter]{chapter}
@@ -63,7 +74,8 @@
 
 \usepackage[
         bookmarksdepth=3,   % bookmark levels in the PDF.
-        bookmarksnumbered   % Show section numbering in bookmark
+        bookmarksnumbered,  % Show section numbering in bookmark
+        hidelinks
     ]{hyperref}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -71,9 +83,10 @@
 
 \usepackage[
         backend=biber,
-        style=alphabetic,
+        style=numeric,
         minnames=4,
-        maxnames=10
+        maxnames=10,
+        sorting=none
     ]{biblatex}
 
 % Cititation References
@@ -83,10 +96,11 @@
 %\DeclareFieldFormat{labelalpha}{\thefield{entrykey}}
 %\DeclareFieldFormat{extraalpha}{}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Content Stuff
+\usepackage{booktabs}
+\usepackage{longtable}
 
-\usepackage{blindtext} % Blind Text: Lorem ipsum....
+\usepackage{tabularx}
+\usepackage{arydshln}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -109,6 +123,92 @@
 }
 \makeatother
 
+% nonumberlist
+\usepackage[xindy,toc,abbreviations]{glossaries-extra}
+\makeglossaries
+\input{glossary.tex}
+
+\usepackage{placeins}
+\usepackage{scrhack}
+\usepackage{listings}
+\usepackage{algorithm}
+\usepackage{algorithmicx}
+\usepackage{algpseudocode}
+\usepackage[lighttt]{lmodern}
+\usepackage[final]{microtype}
+\lstset{basicstyle=\ttfamily}
+\lstdefinestyle{c}{
+    language=C,
+    columns=fixed,
+    keywordstyle=\bfseries,
+    morekeywords={bool, uint8_t, uint16_t, uint32_t, uint64_t, offsetof, \_Alignof, UINT8, UINT16, UINT32, UINT64, BOOLEAN, CHAR8, CHAR16, EFI_HII_PACKAGE_LIST_HEADER, MODULE_HII_PACKAGE_LIST, NULL},
+    numbers=left,
+    stepnumber=1,
+    commentstyle=
+}
+\lstdefinestyle{asm}{
+    language={[x86masm]Assembler},
+    columns=fixed,
+    keywordstyle=\bfseries,
+    morekeywords={rsp, ldr, w0, w1, w2, x0, x1, x2, addi, lwi, lui, sw, lwu, slli, srli, a0, a1, li, lsr, lw, slliw, ubfx, movabs, adrp, b, movw, movt, b.w, auipc, jr, t1, lr, r3, r0, pc, rip, rax, a5},
+    literate=
+    {0x1}{0x1}3
+    {6a0}{6a0}3
+    {0x2}{0x2}3
+    {0x0}{0x0}3
+    {0b}{0b}2,
+    commentstyle=
+}
+\newcommand{\twodots}{\mathinner {\ldotp \ldotp}}
+
+\usepackage{newfloat}
+\DeclareFloatingEnvironment[fileext=frm,placement={!ht},name={Source Code}, listname={List of Source Code Examples}]{lstfloat}
+
+\newcommand{\saveparinfos}{%
+    \edef\myindent{\the\parindent}%
+    \edef\myparskip{\the\parskip}}
+
+
+\newcommand{\useparinfo}{%
+    \setlength{\parindent}{\myindent}%
+    \setlength{\parskip}{\myparskip}}
+
+\RedeclareSectionCommands[tocpagenumberwidth=1.9em]{chapter}
+\DeclareTOCStyleEntry[numwidth=3em]{tocline}{table}
+\DeclareTOCStyleEntries[
+  level:=table,
+  indent:=table,
+  numwidth:=table,
+]{tocline}{figure,lstlisting,algocf,todo}
+
+\setcounter{biburllcpenalty}{9000} % lower letters
+\setcounter{biburlucpenalty}{9000} % upper letters
+
+% https://tex.stackexchange.com/a/94702
+\newenvironment{absolutelynopagebreak}
+  {\par\nobreak\vfil\penalty0\vfilneg
+   \vtop\bgroup}
+  {\par\xdef\tpd{\the\prevdepth}\egroup
+   \prevdepth=\tpd}
+
+\usepackage{csquotes}
+\usepackage[ngerman,british]{babel}
+\usepackage{amsthm}
+\usepackage{amsfonts}
+
+\emergencystretch=2em
+
+% https://tex.stackexchange.com/a/2645
+\makeatletter 
+\newcommand\mynobreakpar{\par\nobreak\@afterheading}
+\makeatother
+
+\usepackage{multicol}
+
+\usepackage[nameinlink]{cleveref}
+\crefname{lstfloat}{source code}{source codes}
+\Crefname{lstfloat}{Source Code}{Source Codes}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % --------------------------------------------------------------------------- %
 % -MAIN DOCUMENT------------------------------------------------------------- %
@@ -126,16 +226,16 @@
 \begin{titlepage}
     \makeatletter
         \centering
-        \includegraphics[width=7cm]{RPTU-Logo-RGB} \par \vspace*{\fill}
-        {\scshape\LARGE \@title} \par \vspace*{\fill}
-        {\bfseries \thesisType's Thesis} \par\vspace{1cm}
-        {von} \par\vspace{1cm}
-        {\Large\itshape \@author} \par\vspace{1cm}
-        {\@date} \par\vspace*{\fill}
-        {Rheinland-Pfälzische Technische Universität Kaiserslautern-Landau,\\
-        Fachbereich Informatik\\
-        67663 Kaiserslautern,\\
-        Deutschland} \par\vspace*{\fill}
+        \includegraphics{RPTU_LOGO_SCHWARZ.pdf}\par\vspace*{\fill}
+        {\scshape\LARGE Designing a Secure and Space-Efficient\break Executable File Format for the\break Unified Extensible Firmware Interface\par}\vspace*{\fill}
+        {\bfseries \thesisType's Thesis\par} \vspace{1cm}
+        {by\par} \vspace{1cm}
+        {\Large\itshape\@author\par}\vspace{1cm}
+        {\@date\par}\vspace*{\fill}
+        {University of Kaiserslautern-Landau\\
+        Department of Computer Science\\
+        67663 Kaiserslautern\\
+        Germany\par}\vspace*{\fill}
         {
         \begin{tabular}{rl}
         Examiner: & \examinerA\\
@@ -149,17 +249,33 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Authorship statement
 
-\section*{Eigenständigkeitserklärung}
+\selectlanguage{ngerman}
 
-Hiermit versichere ich, dass ich die von mir vorgelegte Arbeit mit dem Thema ``\makeatletter\@title\makeatother'' selbstständig verfasst habe, dass ich die verwendeten Quellen und Hilfsmittel vollständig angegeben habe und dass ich die Stellen der Arbeit - einschließlich Tabellen und Abbildungen -, die anderen Werken oder dem Internet im Wortlaut oder dem Sinn nach entnommen sind unter Angabe der Quelle als Entlehnung kenntlich gemacht habe.
+\clearpage
+\pdfbookmark{Verwendete Hilfsmittel}{Verwendete Hilfsmittel}
+\section*{Verwendete Hilfsmittel}
+
+Zur Erstellung dieser Arbeit wurden Grammarly, LanguageTool und DeepL Write als Hilfsmittel zur allgemeinen Verbesserung der Sprache (insb. zur Korrektur von Rechtschreib- und Grammatikfehlern) verwendet.
+
+\pdfbookmark{Eigenst{\"a}ndigkeitserkl{\"a}rung}{Eigenst{\"a}ndigkeitserkl{\"a}rung}
+\section*{Eigenst{\"a}ndigkeitserkl{\"a}rung}
+
+Hiermit versichere ich, dass ich die von mir vorgelegte Arbeit mit dem Thema \glqq Entwurf eines sicheren und platzsparenden ausf{\"u}hrbaren Dateiformats f{\"u}r das Unified Extensible Firmware Interface\grqq selbstst{\"a}ndig verfasst habe, dass ich die verwendeten Quellen und Hilfsmittel vollst{\"a}ndig angegeben habe und dass ich die Stellen der Arbeit --- einschlie{\ss}lich Tabellen und Abbildungen ---, die anderen Werken oder dem Internet im Wortlaut oder dem Sinn nach entnommen sind unter Angabe der Quelle als Entlehnung kenntlich gemacht habe.
 
 \vspace{0.5cm}
 
-Kaiserslautern, den \the\day.\the\month.\the\year
+% https://tex.stackexchange.com/questions/152392/date-format-yyyy-mm-dd#comment1584382_635676
+\newcommand{\twodigits}[1]{\ifnum#1<10 0\fi#1}
 
-\vspace{2cm}
+Kaiserslautern, den \twodigits{\the\day}.\twodigits{\the\month}.\the\year
 
-\begin{tabular}{@{}l@{}}\hline
+\selectlanguage{british}
+
+\vspace{1.45cm}
+
+\begin{tabular}{@{}l@{}}
+\includegraphics[width=5cm]{Signature.pdf}\\
+\hline
 \makeatletter\@author\makeatother
 \end{tabular}
 
@@ -168,17 +284,20 @@ Kaiserslautern, den \the\day.\the\month.\the\year
 
 \include{abstract}
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Acknowledgments
+
+\include{acknowledgements}
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Table of Contents %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \cleardoublepage                    % Open right (req. for bookmark)
+\renewcommand{\contentsname}{Table of Contents}
 \pdfbookmark[0]{\contentsname}{toc} % Add TOC to PDF bookmarks
 \tableofcontents                    % Print TOC
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% List of Algorithms / Figures / ... %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\listoffigures
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Content %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -187,14 +306,32 @@ Kaiserslautern, den \the\day.\the\month.\the\year
 \input{main.tex}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Biliography %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\printbibliography
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Appendix %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \input{appendix}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% List of Algorithms / Figures / ... %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begingroup
+\cleardoublepage
+\let\cleardoublepage\clearpage
+\listoftables
+\listoffigures
+\listofalgorithms
+\listoflstfloats
+\endgroup
+
+\glsaddall
+\printglossary[type=\glsxtrabbrvtype,title={List of Abbreviations}]
+\glsaddall
+\printglossary[type=main]
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Biliography %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\nocite{*}
+\printbibliography
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

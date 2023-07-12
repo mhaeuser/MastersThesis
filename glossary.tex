@@ -1,0 +1,1207 @@
+\newabbreviation{C}{C}{C programming language}
+\newabbreviation{Rust}{Rust}{Rust programming language}
+\newabbreviation{CPU}{CPU}{Central Processing Unit}
+\newabbreviation{Apple}{Apple}{Apple Inc.}
+\newabbreviation{Microsoft}{Microsoft}{Microsoft Corporation}
+\newabbreviation{Google}{Google}{Google LLC}
+\newabbreviation{Intel}{Intel}{Intel Corporation}
+\newabbreviation{Arm}{Arm}{Arm Limited}
+\newabbreviation{AMD}{AMD}{Advanced Micro Devices, Inc}
+\newabbreviation{TIS}{TIS}{Tool Interface Standard}
+\newabbreviation{SCO}{SCO}{The Santa Cruz Operation, Inc.}
+\newabbreviation{Qualcomm}{Qualcomm}{Qualcomm Technologies, Inc.}
+\newabbreviation{IBM}{IBM}{International Business Machines Corporation}
+\newabbreviation{OS}{OS}{operating system}
+\newabbreviation{PC}{PC}{personal computer}
+\newabbreviation{MMU}{MMU}{memory management unit}
+\newabbreviation{SoC}{SoC}{System-on-a-Chip}
+\newabbreviation{RAM}{RAM}{random access memory}
+\newabbreviation{PSP}{PSP}{Platform Security Processor}
+\newabbreviation{ISPRAS}{ISP RAS}{Ivannikov Institute for System Programming of the RAS}
+\newabbreviation{Red-Hat}{Red Hat}{Red Hat, Inc.}
+\newabbreviation{GNU}{GNU}{GNU's Not Unix!}
+\newabbreviation{GCC}{GCC}{\glsxtrshort{GNU} Compiler Collection}
+\newabbreviation{MSVC}{MSVC}{\glsxtrshort{Microsoft} Visual C++}
+\newabbreviation{IBV}{IBV}{Independent \glsxtrshort{BIOS} Vendor}
+\newabbreviation{OEM}{OEM}{original equipment manufacturer}
+\newabbreviation{IEEE}{IEEE}{Institute of Electrical and Electronics Engineers}
+\newabbreviation{ACSL}{ACSL}{ANSI/ISO \glsxtrshort{C} Specification Language}
+\newabbreviation{Intel-ME}{\glsxtrshort{Intel} ME}{\glsxtrshort{Intel} Management Engine}
+\newabbreviation{RFC}{RFC}{Request for Comments}
+\newabbreviation{MPI-SWS}{MPI-SWS}{Max Planck Institute for Software Systems}
+
+\newglossaryentry{byte}
+{
+  name={byte},
+  description={a unit of 8~bits (the definition by \glsxtrshort{C} deviates)}
+}
+
+\newglossaryentry{bit-packing}
+{
+  name={bit-packing},
+  description={a technique for storing data in as few bits as possible without changing its encoding format}
+}
+
+\newglossaryentry{byte-packed}
+{
+  name={\gls{byte}-packed},
+  description={the property of forcing a data type's \gls{data-alignment} requirement~(for composite types, this includes all of its members) to 1~\gls{byte}}
+}
+
+\newglossaryentry{data-alignment}
+{
+  name={data alignment},
+  description={a constraint that data types must reside at addresses divisible by a specific value}
+}
+
+\newglossaryentry{natural-data-alignment}
+{
+  name={natural \gls{data-alignment}},
+  description={a \gls{data-alignment} requirement on basic data types that is equal to their size}
+}
+
+\newglossaryentry{data-structure-padding}
+{
+  name={data structure padding},
+  description={a technique for inserting \glspl{byte} between data structure members or at its end to conform to \gls{data-alignment} requirements}
+}
+
+\newglossaryentry{os-loader}
+{
+  name={\glsxtrshort{OS} loader},
+  description={a software that locates, loads, and hands over control to the operating system kernel}
+}
+
+\newglossaryentry{ABIg}
+{
+  name={application binary interface},
+  description={a specification for conventions regarding anything that concerns binary compatibility between program modules, e.g. sizes and \glspl{data-alignment} of data types}
+}
+\newabbreviation{ABI}{ABI}{\gls{ABIg}}
+
+\newglossaryentry{APIg}
+{
+  name={application programming interface},
+  description={a specification for interfaces used for computer programs to communicate with each other}
+}
+\newabbreviation{API}{API}{\gls{APIg}}
+
+\newglossaryentry{pseudo-randomization}
+{
+  name={pseudo-randomization},
+  description={a technique for producing values that are close enough to statistically random values by deterministic means}
+}
+
+\newglossaryentry{ASLRg}
+{
+  name={Address Space Layout Randomization},
+  description={a technique for making the addresses of process components, such as the executable \gls{image}, \gls{call-stack}, \gls{heap-memory}, or \glspl{shared-library}, unpredictable by the means of \gls{pseudo-randomization}}
+}
+\newabbreviation{ASLR}{ASLR}{\gls{ASLRg}}
+
+\newglossaryentry{KASLRg}
+{
+  name={Kernel \gls{ASLRg}},
+  description={\gls{ASLR} in the \gls{kernel-space}, using \gls{pseudo-randomization} for the addresses of the kernel and its extensions}
+}
+\newabbreviation{KASLR}{KASLR}{\gls{KASLRg}}
+
+\newglossaryentry{firmware}
+{
+  name={firmware},
+  description={a software that is part of a hardware design and often exposes a high-level abstraction for executing hardware operations}
+}
+
+\newglossaryentry{UEFIg}
+{
+  name={Unified Extensible Firmware Interface},
+  description={a \gls{firmware} interface specification by the \glsxtrshort{UEFI} Forum concerned with pre-boot drivers and operating system booting for the IA32, X64, ARM, AArch64, RISC-V, and LoongArch \glsxtrshort{CPU} architectures}
+}
+\newabbreviation{UEFI}{UEFI}{\gls{UEFIg}}
+
+\newglossaryentry{UEFI-PIg}
+{
+  name={\glsxtrshort{UEFI} Platform Initialization},
+  description={a \gls{firmware} interface specification by the \glsxtrshort{UEFI} Forum concerned with hardware initialization for the IA32, X64, ARM, AArch64, RISC-V, and LoongArch \glsxtrshort{CPU} architectures}
+}
+\newabbreviation{UEFI-PI}{\glsxtrshort{UEFI} PI}{\gls{UEFI-PIg}}
+
+\newglossaryentry{PPIg}
+{
+  name={\glsxtrshort{PEIM}-to-\glsxtrshort{PEIM} Interface},
+  description={a globally-uniquely identified shared data structure that is discoverable via \glsxtrshort{PEI} services}
+}
+\newabbreviation{PPI}{PPI}{\gls{PPIg}}
+
+\newglossaryentry{uefi-protocol}
+{
+  name={\glsxtrshort{UEFI} protocol},
+  description={a globally-uniquely identified shared data structure that is discoverable via \glsxtrshort{UEFI} boot services}
+}
+
+\newglossaryentry{depexG}
+{
+  name={dependency expression},
+  description={a simple opcode-based language to describe dependencies on \glspl{PEIM} and \glspl{uefi-protocol}}
+}
+\newabbreviation{depex}{depex}{\gls{depexG}}
+
+\newglossaryentry{SDKg}
+{
+  name={Software Development Kit},
+  description={a collection of tools and \glspl{library} that aid developing for a specific software platform or product}
+}
+\newabbreviation{SDK}{SDK}{\gls{SDKg}}
+
+\newglossaryentry{EDK2g}
+{
+  name={EFI Development Kit II},
+  description={the \glsxtrshort{UEFI} reference implementation and \glsxtrshort{SDK} initially developed by \glsxtrshort{Intel}, now managed by TianoCore}
+}
+\newabbreviation{EDK2}{EDK II}{\gls{EDK2g}}
+
+\newglossaryentry{AUDKg}
+{
+  name={Acidanthera \glsxtrshort{UEFI} Development Kit},
+  description={a community fork of \glsxtrshort{EDK2} with additional security hardening}
+}
+\newabbreviation{AUDK}{AUDK}{\gls{AUDKg}}
+
+\newglossaryentry{PEg}
+{
+  name={Portable Executable},
+  description={an \gls{executable-file} format specified by \glsxtrshort{Microsoft}}
+}
+\newabbreviation{PE}{PE}{\gls{PEg}}
+
+\newglossaryentry{COFFg}
+{
+  name={Common Object File Format},
+  description={an \gls{object-file} format specified by \glsxtrshort{Microsoft}}
+}
+\newabbreviation{COFF}{COFF}{\gls{COFFg}}
+
+\newglossaryentry{PECOFFg}
+{
+  name={\gls{PEg} and \gls{COFFg}},
+  description={an umbrella term for \glsxtrshort{PE} and \glsxtrshort{COFF} due to their shared technical foundations}
+}
+\newabbreviation{PECOFF}{\glsxtrshort{PE}/\glsxtrshort{COFF}}{\gls{PECOFFg}}
+
+\newglossaryentry{ELFg}
+{
+  name={Executable and Linkable Format},
+  description={an \gls{image-file} format specified by \glsxtrshort{SCO}}
+}
+\newabbreviation{ELF}{ELF}{\gls{ELFg}}
+
+\newglossaryentry{MACHOg}
+{
+  name={Mach Object File Format},
+  description={an \gls{image-file} format specified by \glsxtrshort{Apple}}
+}
+\newabbreviation{MACHO}{Mach-O}{\gls{MACHOg}}
+
+\newglossaryentry{kernel-collection}
+{
+  name={Kernel Collection},
+  description={a \glsxtrshort{MACHO} container format for a unified \gls{image} of the operating system kernel and kernel extensions specified by \glsxtrshort{Apple}}
+}
+
+\newglossaryentry{TEg}
+{
+  name={Terse Executable},
+  description={a stripped variant of \glsxtrshort{PE} defined by the \glsxtrshort{UEFI-PI} specification}
+}
+\newabbreviation{TE}{TE}{\gls{TEg}}
+
+\newglossaryentry{UEg}
+{
+  name={\glsxtrshort{UEFI} Executable},
+  description={an \gls{executable-file} format draft proposed by this thesis}
+}
+\newabbreviation{UE}{UE}{\gls{UEg}}
+
+\newglossaryentry{authcode}
+{
+  name={Authenticode},
+  description={a specification by \glsxtrshort{Microsoft} that aggregates various \gls{digital-signature} concepts for the \glsxtrshort{PE} format}
+}
+
+\newglossaryentry{BIOSg}
+{
+  name={Basic Input/Output System},
+  description={in \gls{firmware} development, conventionally refers to past \gls{firmware} implementations originating from `\glsxtrshort{IBM} \glsxtrshort{PC} compatible' machines}
+}
+\newabbreviation{BIOS}{BIOS}{\gls{BIOSg}}
+
+\newglossaryentry{memory-permissions}
+{
+  name={memory permissions},
+  plural={memory permissions},
+  description={a restriction on which memory operations can be performed, like reading, writing, and executing}
+}
+
+\newglossaryentry{memory-privilege}
+{
+  name={memory privilege},
+  description={a restriction on which \gls{CPU} mode can perform memory operations, e.g. to restrict certain memory to the \gls{kernel-space}}
+}
+
+\newglossaryentry{memory-page}
+{
+  name={memory page},
+  description={a memory management unit, usually at least 4 KiB in size, which can be managed in terms of \gls{virtual-memory} mapping and memory permissions}
+}
+
+\newglossaryentry{address-space}
+{
+  name={address space},
+  description={a discrete address range whose mapped data may be context-dependent~(e.g. the \gls{kernel-space} or any \gls{user-space} process) and may origin from different sources~(e.g. main memory or \glsxtrshort{MMIO})}
+}
+
+\newglossaryentry{image}
+{
+  name={image},
+  description={a loosely defined term, but in the context of this thesis shall mean the abstract concept of capturing a \gls{address-space}~(location, content, access permissions, and potentially other properties)}
+}
+
+\newglossaryentry{image-file}
+{
+  name={\gls{image} file},
+  description={a loosely defined term, but in the context of this thesis shall mean a file that encodes an \gls{image}}
+}
+
+\newglossaryentry{executable-file}
+{
+  name={executable file},
+  description={an \gls{image-file} that can be executed by, e.g. a \gls{firmware} or an operating system}
+}
+
+\newglossaryentry{object-file}
+{
+  name={object file},
+  description={an intermediate \gls{image-file} generated by a compiler from compilation units, which can be combined with other such into an \gls{executable-file} by an \gls{image-linker}}
+}
+
+\newglossaryentry{microcode}
+{
+  name={microcode},
+  description={a translation layer that transforms high-level instructions of a processor into low-level circuit-level operations}
+}
+
+\newglossaryentry{linking}
+{
+  name={linking},
+  description={a technique for enforcing \glspl{object-file} and \glspl{library}} with each other or \glspl{executable-file}
+}
+
+\newglossaryentry{library}
+{
+  name={library},
+  plural={libraries},
+  description={a collection of functions and global variables that can be consumed by other \glspl{library} and \glspl{executable-file} by \gls{linking}}
+}
+
+\newglossaryentry{static-library}
+{
+  name={static \gls{library}},
+  plural={static \glspl{library}},
+  description={a \gls{library} that is consumable by \gls{static-linking}}
+}
+
+\newglossaryentry{shared-library}
+{
+  name={shared \gls{library}},
+  plural={shared \glspl{library}},
+  description={a \gls{library} that is consumable by \gls{dynamic-linking}}
+}
+
+\newglossaryentry{static-linking}
+{
+  name={static \gls{linking}},
+  description={a technique for combining multiple \glspl{object-file} into a \gls{library} or \gls{executable-file} at build-time}
+}
+
+\newglossaryentry{dynamic-linking}
+{
+  name={dynamic \gls{linking}},
+  description={a technique for loading one or more \glspl{shared-library} into the \gls{address-space} of an executable at runtime}
+}
+
+\newglossaryentry{dynamic-linker}
+{
+  name={dynamic linker},
+  description={a software, typically part of a \gls{firmware} or operating system, to perform \gls{dynamic-linking}}
+}
+
+\newglossaryentry{image-file-loader}
+{
+  name={\gls{image-file} loader},
+  description={a software, typically part of a \gls{firmware} or operating system, to load and relocate \glspl{shared-library} or \glspl{executable-file}}
+}
+
+\newglossaryentry{image-linker}
+{
+  name={\gls{image-file} linker},
+  description={a software, typically part of a compiler toolchain, to perform \gls{static-linking}.}
+}
+
+\newglossaryentry{image-base-address}
+{
+  name={\gls{image} base address},
+  description={the unique address an \gls{image} can work from without further modification}
+}
+
+\newglossaryentry{image-file-loading}
+{
+  name={\gls{image-file} loading},
+  description={the process of extracting the \gls{image} \gls{address-space} from an \gls{image-file}}
+}
+
+\newglossaryentry{image-relocation}
+{
+  name={\gls{image} relocation},
+  description={a technique for updating all absolute address references of an \gls{image} from its \gls{image-base-address} to a new address}
+}
+
+\newglossaryentry{image-relocation-fixup}
+{
+  name={\gls{image-relocation} fixup},
+  description={an instruction to the \gls{image-file-loader} how to fix up an absolute address reference to the \gls{image} \gls{address-space}}
+}
+
+\newglossaryentry{chained-image-relocation-fixups}
+{
+  name={chained \glspl{image-relocation-fixup}},
+  plural={chained \glspl{image-relocation-fixup}},
+  description={a technique, commonly associated with the \gls{MACHO} format, to manage \glspl{image-relocation-fixup} as a linked list within the \gls{image-segment} data}
+}
+
+% TODO: Reference
+\newglossaryentry{lazy-dynamic-linking}
+{
+  name={lazy \gls{dynamic-linking}},
+  description={a technique for performing \gls{dynamic-linking} only on demand, e.g. when calling an externally imported function}
+}
+
+\newglossaryentry{RELROg}
+{
+  name={relocation read-only},
+  description={a technique for enforcing write protection on \glspl{image-segment} related to \gls{image-relocation} in \glsxtrshort{ELF} files}
+}
+\newabbreviation{RELRO}{RELRO}{\gls{RELROg}}
+
+\newglossaryentry{image-symbol}
+{
+  name={\gls{image} symbol},
+  description={a globally-unique name tied to a value, typically an \gls{image} address to a function or global variable}
+}
+
+\newglossaryentry{cryptographic-hash}
+{
+  name={cryptographic hash},
+  description={a collision-resistant fixed-size value derived from arbitrary data}
+}
+
+\newglossaryentry{digital-signature}
+{
+  name={digital signature},
+  description={a scheme based on asymmetric cryptography to authenticate arbitrary data}
+}
+
+\newglossaryentry{file-magic-number}
+{
+  name={file magic number},
+  description={a unique value at the start or end of a file's content that identifies its format}
+}
+
+\newglossaryentry{SPIg}
+{
+  name={Serial Peripheral Interface},
+  description={a synchronous serial communication interface often found in personal computers and embedded systems, e.g. to connect the \gls{firmware} storage to the chipset or \gls{CPU}}
+}
+\newabbreviation{SPI}{SPI}{\gls{SPIg}}
+
+\newglossaryentry{w-xor-x}
+{
+  name={W\^{}X},
+  description={a technique for prohibiting memory to be writable and executable at the same time~(pronounced `W XOR X')}
+}
+
+\newglossaryentry{XIPg}
+{
+  name={execute-in-place},
+  description={a technique for executing a specially crafted \gls{executable-file} from its source storage without performing \gls{image-file-loading} or \gls{image-relocation} first}
+}
+\newabbreviation{XIP}{XIP}{\gls{XIPg}}
+
+\newglossaryentry{runtime-image-relocation}
+{
+  name={runtime \gls{image-relocation}},
+  description={a technique for performing \gls{image-relocation} on an \gls{image} during its runtime when handing control over from \glsxtrshort{UEFI} to the operating system kernel}
+}
+
+\newglossaryentry{reset-vector}
+{
+  name={reset vector},
+  description={the location from which the \glsxtrshort{CPU} fetches the first instruction}
+}
+
+\newglossaryentry{SECg}
+{
+  name={Security},
+  description={the first \glsxtrshort{UEFI-PI} phase that is invoked after power events, such as the \gls{reset-vector}, which is the software \glsxtrshort{RoT}}
+}
+\newabbreviation{SEC}{SEC}{\gls{SECg}}
+
+\newglossaryentry{PEIg}
+{
+  name={Pre-EFI Initialization},
+  description={the reduced-functionality \glsxtrshort{UEFI-PI} phase to initialize the main memory}
+}
+\newabbreviation{PEI}{PEI}{\gls{PEIg}}
+
+\newglossaryentry{DXEg}
+{
+  name={Driver Execution Environment},
+  description={the fully-featured \glsxtrshort{UEFI-PI} phase to initialize most of the platform}
+}
+\newabbreviation{DXE}{DXE}{\gls{DXEg}}
+
+\newglossaryentry{BDSg}
+{
+  name={Boot Device Search},
+  description={the \glsxtrshort{UEFI-PI} phase to locate the \glsxtrshort{os-loader} to boot}
+}
+\newabbreviation{BDS}{BDS}{\gls{BDSg}}
+
+\newglossaryentry{UEFI-Boot-Manager}
+{
+  name={\glsxtrshort{UEFI} Boot Manager},
+  description={the \glsxtrshort{UEFI} counterpart to \gls{BDS}, which handles \gls{HID} and boot policies}
+}
+
+\newglossaryentry{UEFI-Driver-Model}
+{
+  name={\glsxtrshort{UEFI} Driver Model},
+  description={the \glsxtrshort{UEFI} design to support device drivers to probe and attach to hardware devices}
+}
+
+\newglossaryentry{TSLg}
+{
+  name={Transient System Load},
+  description={the \glsxtrshort{UEFI-PI} transitional phase between the \gls{os-loader} execution and handing off to the operating system kernel}
+}
+\newabbreviation{TSL}{TSL}{\gls{TSLg}}
+
+\newglossaryentry{RTg}
+{
+  name={Runtime},
+  description={the \glsxtrshort{UEFI-PI} phase during the execution of an operating system}
+}
+\newabbreviation{RT}{RT}{\gls{RTg}}
+
+\newglossaryentry{ALg}
+{
+  name={Afterlife},
+  description={the \glsxtrshort{UEFI-PI} phase during platform resets}
+}
+\newabbreviation{AL}{AL}{\gls{ALg}}
+
+\newglossaryentry{MMg}
+{
+  name={\glsxtrshort{UEFI-PI} Management Mode},
+  description={a high-privilege \glsxtrshort{CPU} mode that exceeds the \gls{kernel-space}}
+}
+\newabbreviation{MM}{MM}{\gls{MMg}}
+
+\newglossaryentry{TMM}
+{
+  name={Traditional \glsxtrshort{MM}},
+  description={a \glsxtrshort{MM} implementation that is dependent on \glsxtrshort{DXE} Services and exposes them to its drivers}
+}
+
+\newglossaryentry{StMM}
+{
+  name={Standalone \glsxtrshort{MM}},
+  description={a \glsxtrshort{MM} implementation that is independent of \glsxtrshort{DXE} Services and restricts drivers to \glsxtrshort{MM} Services}
+}
+
+\newglossaryentry{NVRAM}
+{
+  name={non-volatile \glsxtrshort{RAM}},
+  description={a feature of \glsxtrshort{UEFI}-based platforms to persistently store variables, such as for the \gls{firmware} configuration}
+}
+
+\newglossaryentry{machine-word}
+{
+  name={machine word},
+  description={traditionally, the natural data type of a processor}
+}
+
+\newglossaryentry{image-file-header}
+{
+  name={\gls{image-file} header},
+  description={a data structure with metadata and all information required to parse an \gls{image-file}}
+}
+
+\newglossaryentry{image-segment}
+{
+  name={\gls{image} segment},
+  description={the unit of an \gls{image-file} used by an \gls{image-file-loader} that composes an \gls{image} \gls{address-space}}
+}
+
+\newglossaryentry{image-file-section}
+{
+  name={\gls{image-file} section},
+  description={the unit of an \gls{image-file} used by an \gls{image-linker} that composes an \gls{image-segment}}
+}
+
+\newglossaryentry{image-entry-point}
+{
+  name={\gls{image} entry point},
+  description={the address in an \gls{image} \gls{address-space} of an \gls{executable-file} to jump to when executing the \gls{image}}
+}
+
+\newglossaryentry{verified-boot}
+{
+  name={Verified Boot},
+  description={a technique for authenticating the entire platform \gls{firmware} boot process, typically with using a \gls{HRoT}}
+}
+
+\newglossaryentry{secure-boot}
+{
+  name={Secure Boot},
+  description={a technique for authenticating \glsxtrshort{UEFI} \gls{OS} loaders and third-party drivers using \glspl{digital-signature}}
+}
+
+\newglossaryentry{measured-boot}
+{
+  name={Measured Boot},
+  description={a technique for collecting critical information about the boot environment~(e.g. hardware information or \gls{firmware} configuration) and have a trusted remote attestation entity validate it}
+}
+
+\newglossaryentry{format-string}
+{
+  name={format string},
+  description={a string utilizing format specifiers, which act like placeholders, to dynamically compose a string}
+}
+
+\newglossaryentry{endianness}
+{
+  name={endianness},
+  description={the \gls{byte} order of a multi-\gls{byte} basic data type}
+}
+
+\newglossaryentry{big-endian}
+{
+  name={big-endian},
+  description={an \gls{endianness} that lays out \glspl{byte} from the most to the least significant \gls{byte} in memory}
+}
+
+\newglossaryentry{little-endian}
+{
+  name={little-endian},
+  description={an \gls{endianness} that lays out \glspl{byte} from the least to the most significant \gls{byte} in memory}
+}
+
+\newglossaryentry{MMIOg}
+{
+  name={memory-mapped input/output},
+  description={a technique for mapping device control registers into the \glsxtrshort{CPU} \gls{address-space}}
+}
+\newabbreviation{MMIO}{MMIO}{\gls{MMIOg}}
+
+\newglossaryentry{physical-memory}
+{
+  name={physical memory},
+  description={a concept to directly address main memory and \glsxtrshort{MMIO}}
+}
+
+\newglossaryentry{memory-swapping}
+{
+  name={memory swapping},
+  description={sometimes called paging, a technique for temporarily offloading \gls{memory-page} onto secondary memory}
+}
+
+\newglossaryentry{virtual-memory}
+{
+  name={virtual memory},
+  description={a concept to dynamically manage an \gls{address-space} that can be aggregated from, e.g. physical main memory and permanent storage devices}
+}
+
+\newglossaryentry{RoTg}
+{
+  name={Root of Trust},
+  plural={Roots of Trust},
+  description={an entity in a secure system design that is axiomatically trusted}
+}
+\newabbreviation{RoT}{RoT}{\gls{RoTg}}
+\newabbreviation{SRoT}{SRoT}{Software \gls{RoTg}}
+\newabbreviation{HRoT}{HRoT}{Hardware \gls{RoTg}}
+
+\newglossaryentry{IBBg}
+{
+  name={Initial Boot Block},
+  description={code, typically \glsxtrshort{SEC} and \glsxtrshort{PEI}, on the \gls{firmware} storage that is cryptographically authenticated by \gls{Intel-Boot-Guard}}
+}
+\newabbreviation{IBB}{IBB}{\gls{IBBg}}
+
+\newglossaryentry{OBBg}
+{
+  name={\glsxtrshort{OEM} Boot Block},
+  description={\glspl{FVg}, typically \glsxtrshort{DXE}, \glsxtrshort{RT}, and \glsxtrshort{MM}, shadowed to memory that are cryptographically authenticated by \glsxtrshort{PEI} as part of \gls{Intel-Boot-Guard}}
+}
+\newabbreviation{OBB}{OBB}{\gls{OBBg}}
+
+\newglossaryentry{Intel-Boot-Guard}
+{
+  name={\glsxtrshort{Intel} Boot Guard},
+  description={a \gls{HRoT} that verifies the }
+}
+
+\newglossaryentry{Intel-FSP}
+{
+  name={\glsxtrshort{Intel} \Gls{firmware} Support Package},
+  description={}
+}
+
+\newglossaryentry{chain-of-trust}
+{
+  name={Chain of Trust},
+  plural={Chains of Trust},
+  description={starting at the \glsxtrshort{RoT} as ground truth, each current entity~(e.g. software program) verifies the next, forming a fully trusted chain}
+}
+
+\newglossaryentry{digital-certificate}
+{
+  name={digital certificate},
+  description={a cryptographic key pair that can be used to sign~(private key) or authenticate~(public key) data}
+}
+
+\newglossaryentry{root-digital-certificate}
+{
+  name={root \gls{digital-certificate}},
+  description={a self-signed \gls{digital-certificate} that is axiomatically trusted by an authority-based system design}
+}
+
+\newglossaryentry{CAg}
+{
+  name={certification authority},
+  plural={certification authorities},
+  description={an entity that issues \glspl{digital-certificate} and may function as a \gls{RoTg}}
+}
+\newabbreviation{CA}{CA}{\gls{CAg}}
+
+\newglossaryentry{HSMg}
+{
+  name={hardware security module},
+  description={a device that protects, manages, and performs tasks with secret keys}
+}
+\newabbreviation{HSM}{HSM}{\gls{HSMg}}
+
+\newglossaryentry{SMEPg}
+{
+  name={Supervisor Mode Execution Prevention},
+  description={a feature of \glsxtrshort{Intel} architecture \glspl{CPU} to allow execution of \gls{user-space} memory only when explicitly allowed}
+}
+\newabbreviation{SMEP}{SMEP}{\gls{SMEPg}}
+
+\newglossaryentry{SMAPg}
+{
+  name={Supervisor Mode Access Prevention},
+  description={a feature of \glsxtrshort{Intel} architecture \glspl{CPU} to allow read and write accesses to \gls{user-space} memory only when explicitly allowed}
+}
+\newabbreviation{SMAP}{SMAP}{\gls{SMAPg}}
+
+\newglossaryentry{page-fault}
+{
+  name={page fault},
+  description={an exception raised by a \glsxtrshort{MMU} when accessing a \gls{memory-page} fails~(e.g. the \gls{memory-page} is unmapped or the processor is in an underprivileged state)}
+}
+
+\newglossaryentry{kernel-space}
+{
+  name={kernel-space},
+  description={a \glsxtrshort{CPU} organization state for the operating system kernel that usually consists of a high-privilege \glsxtrshort{CPU} mode and a \gls{page-table} that maps most of the operating main memory}
+}
+
+\newglossaryentry{user-space}
+{
+  name={user-space},
+  description={a \glsxtrshort{CPU} organization state for user-invoked processes that usually consists of a low-privilege \glsxtrshort{CPU} mode and a limited, process-specific \gls{page-table}}
+}
+
+\newglossaryentry{PTIg}
+{
+  name={\gls{page-table} isolation},
+  description={a technique for mapping only the minimal amount of \gls{kernel-space} \glspl{memory-page} into \gls{user-space} \glspl{address-space}}
+}
+\newabbreviation{PTI}{PTI}{\gls{PTIg}}
+
+\newglossaryentry{FVg}
+{
+  name={firmware volume},
+  description={a logical unit to store and organize \glsxtrshort{UEFI-PI} and \glsxtrshort{UEFI} modules and accompanying data}
+}
+\newabbreviation{FV}{FV}{\gls{FVg}}
+
+\newglossaryentry{FFSg}
+{
+  name={firmware file system},
+  description={a minimal, flat file system for \glspl{FVg}}
+}
+\newabbreviation{FFS}{FFS}{\gls{FFSg}}
+
+\newglossaryentry{PEIMg}
+{
+  name={\glsxtrshort{PEI} module},
+  description={an executable module designated to run during the \glsxtrshort{UEFI-PI} \glsxtrshort{PEI} phase}
+}
+\newabbreviation{PEIM}{PEIM}{\gls{PEIMg}}
+
+\newglossaryentry{PEIM-shadowing}
+{
+  name={\gls{PEIM} shadowing},
+  description={a technique for transferring an \glsxtrshort{XIP} \gls{image} from the \gls{firmware} storage to the main memory at runtime}
+}
+
+\newglossaryentry{CARg}
+{
+  name={cache-as-\glsxtrshort{RAM}},
+  description={a technique for~(temporarily) using cache memory as if it was system \glsxtrshort{RAM}}
+}
+\newabbreviation{CAR}{CAR}{\gls{CARg}}
+
+\newglossaryentry{NEMg}
+{
+  name={no-eviction mode},
+  description={on \glsxtrshort{Intel} platforms, the implementation of \glsxtrshort{CAR}, which disables cache line eviction to persist its content}
+}
+\newabbreviation{NEM}{NEM}{\gls{NEMg}}
+
+\newglossaryentry{page-table}
+{
+  name={page table},
+  description={a data structure to map \gls{virtual-memory} \glspl{memory-page} to \gls{physical-memory} \glspl{memory-page}}
+}
+
+\newglossaryentry{image-preloading}
+{
+  name={\gls{image} preloading},
+  description={a technique for performing\gls{image-file-loading} at build-time}
+}
+
+\newglossaryentry{image-prelinking}
+{
+  name={\gls{image} prelinking},
+  description={a technique for performing\gls{dynamic-linking} at build-time}
+}
+
+\newglossaryentry{ISAg}
+{
+  name={instruction set architecture},
+  description={an abstract definition of processor instructions, registers, platform features, etc., that is implemented by a microarchitecture}
+}
+\newabbreviation{ISA}{ISA}{\gls{ISAg}}
+
+\newglossaryentry{GOTg}{
+  name={global offset table},
+  description={an \gls{image-file-section} that stores externally-linked, relocatable absolute addresses referenced by read-only \glspl{image-segment}}
+}
+\newabbreviation{GOT}{GOT}{\gls{GOTg}}
+
+\newglossaryentry{PLTg}
+{
+  name={procedure linkage table},
+  description={function call stubs analogous to \gls{GOTg}}
+}
+\newabbreviation{PLT}{PLT}{\gls{PLTg}}
+
+\newglossaryentry{relative-addressing}
+{
+  name={relative addressing},
+  description={a technique for encoding addresses relative to the current \glsxtrshort{CPU} instruction}
+}
+
+\newglossaryentry{LASSg}
+{
+  name={Linear Address Space Separation},
+  description={a feature of \glsxtrshort{Intel} 64 architecture \glspl{CPU} to prohibit \gls{user-space} accesses to \gls{kernel-space} memory and vice-versa by segmenting the process \gls{address-space} into a low half~(where \gls{user-space} memory resides) and a high half~(where \gls{kernel-space} memory resides)}
+}
+\newabbreviation{LASS}{LASS}{\gls{LASSg}}
+
+\newglossaryentry{side-channel}
+{
+  name={side-channel},
+  description={a source of metadata that allows inferring secret information, e.g. determining whether a \gls{kernel-space} \gls{memory-page} is present by measuring memory access timing from \gls{user-space}}
+}
+
+\newglossaryentry{JITg}
+{
+  name={just-in-time compilation},
+  description={a technique for compiling code, commonly a form of intermediate and abstract assembly-like language, just in time for its execution}
+}
+\newabbreviation{JIT}{JIT}{\gls{JITg}}
+
+\newglossaryentry{libc}
+{
+  name={libc},
+  description={the \glsxtrshort{C} standard library for hosted environments}
+}
+
+\newglossaryentry{code-gadget}
+{
+  name={code-gadget},
+  description={in the field of software exploitation, a sequence of processor instructions already in memory, which is repurposed to enable or perform malicious operations}
+}
+
+\newglossaryentry{shellcode}
+{
+  name={shellcode},
+  description={an attacker-controlled code payload that may start a privileged command shell or perform other malicious actions}
+}
+
+\newglossaryentry{call-stack-smashing}
+{
+  name={\gls{call-stack} smashing},
+  description={an intentional \gls{call-stack} buffer overflow to create new \gls{shellcode} in the \gls{call-stack} memory}
+}
+
+\newglossaryentry{return-address}
+{
+  name={return address},
+  plural={return addresses},
+  description={the address of the instruction following the current subroutine call, stored in the current \gls{call-stack-frame}}
+}
+
+\newglossaryentry{call-stack-canary}
+{
+  name={\gls{call-stack} canary},
+  plural={\gls{call-stack} canaries},
+  description={typically unpredictable values placed in the current \gls{call-stack-frame}, especially near the \gls{return-address}, to detect \glspl{call-stack-overflow}}
+}
+
+\newglossaryentry{return-to-libc}
+{
+  name={return-to-libc},
+  description={a technique for exploiting programs by corrupting the \gls{call-stack} to overwrite the \gls{return-address} with a \gls{libc} address or another \gls{code-gadget}, typically to invoke shell commands}
+}
+
+\newglossaryentry{ROPg}
+{
+  name={return-oriented programming},
+  description={a generalization of a \gls{return-to-libc} attack, involving arbitrary \gls{code-gadget} chain to eventually achieve arbitrary code execution}
+}
+\newabbreviation{ROP}{ROP}{\gls{ROPg}}
+
+\newglossaryentry{TOC-TOUg}
+{
+  name={time-of-check to time-of-use},
+  description={a software vulnerability that allows for data to be invalidated after authentication and before processing is complete}
+}
+\newabbreviation{TOC-TOU}{TOC/TOU}{\gls{TOC-TOUg}}
+
+\newglossaryentry{TLBg}
+{
+  name={translation lookaside buffer},
+  description={a cache of the recently translated virtual address to physical address mappings}
+}
+\newabbreviation{TLB}{TLB}{\gls{TLBg}}
+
+\newglossaryentry{syscallg}
+{
+  name={system call},
+  description={a command by a \gls{user-space} to be executed in the \gls{kernel-space}}
+}
+\newabbreviation{syscall}{syscall}{\gls{syscallg}}
+
+\newglossaryentry{ACPIg}
+{
+  name={Advanced Configuration and Power Interface},
+  description={a specification for data and bytecode tables for an operating system to discover and configure computer hardware components}
+}
+\newabbreviation{ACPI}{ACPI}{\gls{ACPIg}}
+
+\newglossaryentry{HIDg}
+{
+  name={human interface device},
+  description={a class of computer devices which take inputs from humans or output information to humans}
+}
+\newabbreviation{HID}{HID}{\gls{HIDg}}
+
+\newglossaryentry{fuzz-testing}
+{
+  name={fuzz testing},
+  description={a technique for automatically generating inputs for a computer program in order to test its behaviour, e.g. output correctness, internal invariant violations, or exceptions and crashes}
+}
+
+\newglossaryentry{PICg}
+{
+  name={position-independent code},
+  description={a concept of \glsxtrshort{ELF} and \glsxtrshort{MACHO} \glspl{image-file} to utilize \gls{relative-addressing} and a \glsxtrshort{GOT} to emit \glspl{shared-library} that can be loaded at an arbitrary \glspl{image-base-address}}
+}
+\newabbreviation{PIC}{PIC}{\gls{PICg}}
+
+\newglossaryentry{PIEg}
+{
+  name={position-independent executable},
+  description={similar to \glsxtrshort{PIC}, but for \glspl{executable-file}}
+}
+\newabbreviation{PIE}{PIE}{\gls{PIEg}}
+
+\newglossaryentry{COWg}
+{
+  name={copy-on-write},
+  description={a technique for sharing data, which all consumers may independently modify, by lazily duplicating the source data only when the first write happens}
+}
+\newabbreviation{COW}{COW}{\gls{COWg}}
+
+\newglossaryentry{UEFI-HIIg}
+{
+  name={\glsxtrshort{UEFI} Human Interface Infrastructure},
+  description={an \glsxtrshort{UEFI} concept to manage user input and output, including forms, resources, and localization}
+}
+\newabbreviation{UEFI-HII}{\glsxtrshort{UEFI} HII}{\gls{UEFI-HIIg}}
+
+\newglossaryentry{module-dispatcher}
+{
+  name={module dispatcher},
+  description={a phase-specific program that locates \glspl{PEIM}, \glsxtrshort{UEFI}-related drivers, or \gls{MM} drivers and starts them with regard to their dependencies}
+}
+
+\newglossaryentry{CFIg}
+{
+  name={control flow integrity},
+  description={a technique for enforcing the integrity of the control flow, i.e. there are no branches to unexpected targets}
+}
+\newabbreviation{CFI}{CFI}{\gls{CFIg}}
+
+\newglossaryentry{BTIg}
+{
+  name={branch target identification},
+  description={an \glsxtrshort{Arm} architecture technology to annotate indirect branch targets and to fault when branching to a location without such an annotation}
+}
+\newabbreviation{BTI}{BTI}{\gls{BTIg}}
+
+\newglossaryentry{IBTg}
+{
+  name={indirect branch tracking},
+  description={an \glsxtrshort{Intel} architecture technology to annotate indirect branch targets and to fault when branching to a location without such an annotation}
+}
+\newabbreviation{IBT}{IBT}{\gls{IBTg}}
+
+\newglossaryentry{FCFI}
+{
+  name={forward-edge \glsxtrshort{CFI}},
+  description={a technique of annotating targets of indirect branches with \gls{CPU} architecture specific guards, such as \gls{BTI} and \gls{IBT}, so that jumping to \glspl{code-gadget} is limited to known jump targets}
+}
+
+\newglossaryentry{shadow-call-stack}
+{
+  name={shadow \gls{call-stack}},
+  description={a stack structure, sometimes managed internally by the \gls{CPU}, that keeps a history of \glspl{return-address} to detect \glsxtrshort{ROP} attacks}
+}
+
+\newglossaryentry{CETg}
+{
+  name={Control-flow Enforcement Technology},
+  description={general term for \glsxtrshort{Intel} \gls{IBT} and \glsxtrshort{CPU}-assisted \gls{shadow-call-stack} support}
+}
+\newabbreviation{CET}{CET}{\gls{CETg}}
+
+\newglossaryentry{CICDg}
+{
+  name={continuous integration and continuous delivery},
+  description={a joint practice to automatically build, test, and deploy computer programs}
+}
+\newabbreviation{CICD}{CI/CD}{\gls{CICDg}}
+
+\newglossaryentry{PDBg}
+{
+  name={program database},
+  description={a database of \gls{image} debug information, e.g. \glspl{image-symbol}, used in combination with a \gls{PE} file}
+}
+\newabbreviation{PDB}{PDB}{\gls{PDBg}}
+
+\newglossaryentry{call-stack}
+{
+  name={call stack},
+  description={a stack-based data structure, often with hardware support from the processor, to manage local data required by subroutines}
+}
+
+\newglossaryentry{call-stack-frame}
+{
+  name={\gls{call-stack} frame},
+  description={a range of the \gls{call-stack} that is dedicated to a single subroutine}
+}
+
+\newglossaryentry{heap-memory}
+{
+  name={heap memory},
+  description={a memory area dedicated to managing and storing dynamically allocated memory}
+}
+
+\newglossaryentry{memory-contention}
+{
+  name={memory contention},
+  description={a situation of conflict over reserving and accessing main memory}
+}
+
+\newglossaryentry{static-memory-allocation}
+{
+  name={static memory allocation},
+  description={a technique for allocating fixed amounts of memory at build-time, commonly utilizing a data \gls{image-segment}}
+}
+
+\newglossaryentry{call-stack-memory-allocation}
+{
+  name={\gls{call-stack} memory allocation},
+  description={a technique for allocating and free memory at runtime (with the \gls{call-stack-frame} layout typically computed at build-time) on the \gls{call-stack}}
+}
+
+\newglossaryentry{dynamic-memory-allocation}
+{
+  name={dynamic memory allocation},
+  description={a technique for allocating and free arbitrary amounts of memory with a dynamic lifetime at runtime using \gls{heap-memory}}
+}
+
+\newglossaryentry{tail-recursion-elimination}
+{
+  name={tail-recursion elimination},
+  description={a technique for optimizing a recursive function call at the function's end to re-use the previous step's \gls{call-stack-frame}}
+}
+
+\newglossaryentry{use-after-scope}
+{
+  name={use-after-scope},
+  description={a bug of accessing previously automatically allocated memory after its scope has ended}
+}
+
+\newglossaryentry{use-after-free}
+{
+  name={use-after-free},
+  description={a bug of accessing a previously dynamically allocated memory pointer after it has been freed}
+}
+\newabbreviation{UAF}{UAF}{\gls{use-after-free}}
+
+\newglossaryentry{double-free}
+{
+  name={double free},
+  description={a bug of attempting to free a previously dynamically allocated memory pointer after it has been freed}
+}
+
+\newglossaryentry{null-pointer-dereference}
+{
+  name={\texttt{\textbf{NULL}}-pointer dereference},
+  sort={NULL-pointer dereference},
+  description={a bug of attempting to dereference a \lstinline[style=c]|NULL|-pointer}
+}
+
+\newglossaryentry{buffer-overflow}
+{
+  name={buffer overflow},
+  description={a bug of accessing memory beyond its allocated range}
+}
+
+\newglossaryentry{call-stack-overflow}
+{
+  name={\gls{call-stack} overflow},
+  description={a \gls{buffer-overflow} within the \gls{call-stack} memory}
+}
+
+\newglossaryentry{ASCIIg}
+{
+  name={American Standard Code for Information Interchange},
+  description={de-facto standard for 7-bit string character encoding in computing systems~(other standards effectively extend it)}
+}
+\newabbreviation{ASCII}{ASCII}{\gls{ASCIIg}}
+
+\newglossaryentry{KVMg}
+{
+  name={Kernel-based Virtual Machine},
+  description={a hypervisor that uses hardware virtualization for the Linux kernel}
+}
+\newabbreviation{KVM}{KVM}{\gls{KVMg}}
+
+\newglossaryentry{OVMFg}
+{
+  name={Open Virtual Machine Firmware},
+  description={an \glsxtrshort{Intel} architecture \glsxtrshort{UEFI-PI} and \glsxtrshort{UEFI} implementation by \gls{EDK2} for QEMU and \glsxtrshort{KVM}}
+}
+\newabbreviation{OVMF}{OVMF}{\gls{OVMFg}}
+
+\newglossaryentry{ArmVirtQemu}
+{
+  name={ArmVirtQemu},
+  description={an \glsxtrshort{Arm} architecture \glsxtrshort{UEFI-PI} and \glsxtrshort{UEFI} implementation by \gls{EDK2} for QEMU and  \glsxtrshort{KVM}}
+}
+
+\newglossaryentry{fault-injection}
+{
+  name={fault injection},
+  description={a technique for testing software with intentional faults to observe its error-handling}
+}
+
+\newglossaryentry{reference-counting}
+{
+  name={reference counting},
+  description={a dynamic memory management scheme that automatically tracks the number of live references to an object and frees it when it is unreferenced}
+}
+
+\newglossaryentry{garbage-collection}
+{
+  name={garbage collection},
+  description={a dynamic memory management scheme that periodically scans objects for live references and frees it when it is unreferenced or only referenced in a cycle without live references}
+}
+
+\newglossaryentry{LTOg}
+{
+  name={link-time optimization},
+  description={a technique for moving code generation to the link-time, which allows code optimization between code compilation units}
+}
+\newabbreviation{LTO}{LTO}{\gls{LTOg}}
+
+\newglossaryentry{twos-complement}
+{
+  name={two's complement},
+  description={a signed integer representation that encodes negative values as their positive complement regarding $2^N$}
+}
+
+\newglossaryentry{ones-complement}
+{
+  name={ones' complement},
+  description={a signed integer representation that encodes negatives values as their bitwise inverse}
+}
+
+\newglossaryentry{sign-and-magnitude}
+{
+  name={sign and magnitude},
+  description={a signed integer representation that encodes negative values by setting the most significant bit}
+}
+
+\newglossaryentry{HOBg}
+{
+  name={Hand-Off Block},
+  description={containers of data storage to pass information from the \glsxtrshort{PEI} to the \glsxtrshort{DXE} phase}
+}
+\newabbreviation{HOB}{HOB}{\gls{HOBg}}
+
+\newglossaryentry{trusted-timestamp}
+{
+  name={trusted timestamp},
+  description={a timestamp that has been digitally signed by a trusted authority to be authentic}
+}
+
+\newglossaryentry{delta-encoding}
+{
+  name={delta encoding},
+  description={a technique for encoding sequential data as a difference from previous data}
+}
+
+\newglossaryentry{readers-writer-lock}
+{
+  name={readers-writer lock},
+  description={a lock data structure that allows either an arbitrary number of readers or exactly one writer}
+}
