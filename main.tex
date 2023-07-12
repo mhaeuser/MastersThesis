@@ -1,30 +1,1460 @@
+% FIXME: no relocs to writable for RT?
+
+\newtheorem{requirement}{Requirement}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{Introduction} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\blindtext[2]
+\Glspl{image-file} are core components of modern computer systems. They encode \glspl{library} and executable applications for efficient yet flexible consumption and execution, respectively, by an execution environment such as an operating system or a \gls{firmware} implementation~\cite{os-concepts,pi-spec,uefi-spec}. In order to support complex dependency trees, a responsive user experience, and advanced security features, the common \gls{image-file} formats have various powerful features~\cite{elf-spec,macho-spec,pe-format}, which come at the cost of complexity and a maintenance burden. The entire software stack involved --- the \glspl{image-file-loader}, \glspl{dynamic-linker}, and other processing tools --- grows along with the \gls{image-file} format specifications they target. However, many of the use cases in the areas of embedded systems and \gls{firmware} development do not require sophisticated features designed for the needs of advanced operating systems~\cite{pi-spec,uefi-spec}.
 
+To reduce the maintenance and platform resource burden of enabling such features, we propose a novel \gls{executable-file} format to be used by implementations of the \gls{UEFI} and \gls{UEFI-PI} specifications~\cite{pi-spec,uefi-spec}. In order to identify the necessary features to be supported by the new design, we will briefly introduce key concepts of the most common \gls{image-file} formats. This will help us to build a useful abstraction of \gls{UEFI} \glspl{executable-file} --- a specific class of \glspl{image-file}.
+
+However, before we get into the technical details of \glspl{image-file}, let us first lay out the foundations on which they are built.
+
+\begin{figure}[ht]
+  \centering
+  \begin{tabular}{c@{}c@{}}
+    \begin{tabular}{c}
+      \textbf{Address}\\
+      \textbf{Memory}
+    \end{tabular}
+    &
+    \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|c|}
+      0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10 & 11 & 12\\
+      \hline
+      `H' & `e' & `l' & `l' & `o' & `,' & ` ' & `w' & `o' & `r' & `l' & `d' & `!'\\
+      \hline
+    \end{tabular}
+  \end{tabular}
+  \caption{Processor Main Memory Addressing.}
+  \label{fig:physaddr}
+  \caption*{Example of main memory addressing for the string literal `Hello, world!'. Normally, main memory addressing is \gls{byte}-wise, zero-based, and contiguous. In this case, we assume an encoding of one \gls{byte} per character, so that each character resides in a dedicated memory cell.}
+\end{figure}
+
+\section{Address Spaces and Virtual Memory}
+
+Computer processors need memory to read from and write to instruction operands and results~\cite{ia32,arm-isa}. In addition to the few and small processor registers, there is usually a much larger main memory. The processor indexes it with addresses, which are non-negative integers and usually correspond to individual \gls{byte} locations~\cite{os-concepts,ia32,arm-isa}. This is called \gls{physical-memory} addressing~(see Figure~\ref{fig:physaddr}). Note that some platforms allow \gls{MMIO} regions to be mapped into the physical \gls{address-space}~\cite{ia32}. In particular, the \gls{firmware} storage device that holds the \gls{reset-vector}~(the code that the \glsxtrshort{CPU} executes after a reset) is usually mapped by \gls{physical-memory}~\cite{ia32}.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics{Figures/Addressing.pdf}
+  \caption{Absolute and Relative Addressing.}
+  \label{fig:rel_addr}
+  \caption*{Two memory blocks with internal self-references. The left one uses absolute addressing, i.e. instructions store the address of the referenced datum, while the right one uses \gls{relative-addressing}, i.e. instructions store the offset from their addresses to the address of the referenced datum. The bottom half of the figure shows what happens when moving both blocks from the address $\mathrm{1000}_{16}$ to $\mathrm{1500}_{16}$ without any further modification. The absolute address reference still points to the old location of the datum, while the relative address reference points to its new location.}
+\end{figure}
+
+\subsection{Absolute and Relative Addressing}
+
+For sophisticated computer processors (e.g. those using the \glsxtrshort{Intel} or \glsxtrshort{Arm} \glspl{ISA}), there are typically two classes of addressing modes~\cite{ia32,arm-isa}. Absolute addressing uses memory addresses as described above. \Gls{relative-addressing}, on the other hand, uses memory address offsets that are added to the current instruction address. The advantage of the latter approach is that, if a self-contained memory block referencing its internal data~(e.g. an \gls{image}) is moved to a different start address, this invalidates all internal self-referencing absolute addresses, while all relative addresses remain valid~(see Figure~\ref{fig:rel_addr}). To move memory referenced by an absolute address, it must be updated before dereferencing it again~(see Section~\ref{sec:reloc}).
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics{Figures/VMem.pdf}
+  \caption{Virtual Addressing.}
+  \label{fig:vmem}
+  \caption*{Example of a \gls{virtual-memory} mapping. As shown, \gls{virtual-memory} pages can be mapped to any \gls{physical-memory} page in any order, to a peripheral device \gls{MMIO} region, or to secondary memory such as the \gls{memory-swapping} device. In the latter case, the \gls{virtual-memory} page may be technically unmapped, and the operating system backs it on demand when handling the \gls{page-fault} exception.}
+\end{figure}
+
+\subsection{Memory Pages and Virtual Address Spaces}
+
+To allow for advanced memory management, an abstraction called \gls{virtual-memory} is built on top of \gls{physical-memory}~\cite{os-concepts}. The virtual \gls{address-space} is typically segmented into \glspl{memory-page}, each of which can be individually backed by a different physical \gls{memory-page}, or not be mapped at all~(see Figure~\ref{fig:vmem}). Accesses to unmapped virtual \glspl{memory-page} usually result in a processor exception that can be caught by the operating system. This allows \gls{virtual-memory} to be populated on demand with data from secondary memory, such as persistent storage. \Gls{memory-swapping} is a technique that uses this concept to temporarily offload data from the main memory to persistent storage, particularly in high \gls{memory-contention} situations~\cite{os-concepts,linux-swap}.
+
+\section{Memory Allocation Schemes and Memory Management}
+
+\Gls{firmware} implementations and operating system kernels manage platform resources to, among other things, provide drivers and applications with sufficient memory. There are three main approaches to memory allocation. \Gls{static-memory-allocation} reserves fixed amounts of memory with a static lifetime, i.e. it is allocated for the duration of program execution~\cite{ISO:2018:III,rust-ref}. \Gls{call-stack-memory-allocation} allocates (usually small and fixed amounts of) memory with a local lifetime, i.e. it is allocated exactly while in scope, and it is automatically freed when the scope ends. For this reason, \glsxtrshort{C} also refers to \gls{call-stack-frame} variables as `automatic variables'~\cite{ISO:2018:III}. In contrast, \gls{dynamic-memory-allocation} reserves (usually large or flexible) amounts of memory with a dynamic lifetime, i.e. it is not limited to a simple scope-based lifetime. \Glsxtrshort{C} requires manual memory management for dynamically allocated memory~\cite{ISO:2018:III}, while the safe subset of \glsxtrshort{Rust} does not support it at all~\cite{rust-ref}.
+
+\subsection{Static Memory Allocation}
+\label{sec:static_mem_alloc}
+
+For global data, this is done as part of the initialization of the program and then remains valid throughout its lifetime~\cite{ISO:2018:III,rust-ref}. Essentially, the compiler reserves the memory within the \gls{image} memory~(see Section~\ref{sec:segments}), there is no runtime memory allocator involved and so there is no room for memory allocation errors.
+
+The size of statically allocated memory is constant, so compilers and code analysis tools know its bounds~\cite{ISO:2018:III,rust-ref}. Because of the static lifetime guarantee, it is not possible to create references to statically allocated memory that may become invalid at runtime. However, if a global state of the execution environment stores references, the program terminates, and the execution environment does not perform clean-up tasks, the references may become invalid.
+
+\subsection{Call Stack Memory Allocation}
+\label{sec:stack_mem_alloc}
+
+The \gls{call-stack} requires incremental memory allocation for \glspl{call-stack-frame}, i.e. the areas required by specific subroutine calls~(see Figure~\ref{fig:stack})~\cite{os-concepts,ia32,arm-isa}. Unlike \gls{static-memory-allocation}, \gls{call-stack-memory-allocation} requires a memory allocator. The program itself embeds its logic, expanding or shrinking its \gls{call-stack} in a last-in-first-out fashion as needed. While the individual \glspl{call-stack-frame} typically have fixed sizes~(variable-length arrays are a rare exception), unbounded recursions can require infinitely many \glspl{call-stack-frame} and thus infinitely much \gls{call-stack} memory~(except in cases of e.g. \gls{tail-recursion-elimination}~\cite{rec-elim}).
+
+\begin{figure}[ht]
+  \centering
+  \begin{minipage}{0.35\textwidth}
+    \begin{lstlisting}[style=C]
+void f(void) {
+  uint8_t  f1;
+  uint32_t f2;
+}
+
+void g(void) {
+  uint64_t g1;
+  f();
+}
+
+void h(void) {
+  g();
+}
+    \end{lstlisting}
+  \end{minipage}
+  \begin{minipage}{0.5\textwidth}
+    \includegraphics{Figures/CallStack.pdf}
+  \end{minipage}
+  \caption{Call Stack and Call Stack Frames.}
+  \label{fig:stack}
+  \caption*{A source code example and the corresponding \gls{call-stack} layout. The \gls{call-stack} generally grows from top to bottom in a last-in-first-out fashion and consists of successive \glspl{call-stack-frame} of subroutine calls. The data within a \gls{call-stack-frame} are aligned according to the \gls{ABI} alignment requirements, i.e. the compiler is likely to insert \gls{data-structure-padding} between \lstinline|f1| and \lstinline|f2| (the illustration assumes \gls{natural-data-alignment}). The \glspl{call-stack-frame} may have stricter \gls{data-alignment} requirements~\cite{sysVAMD64}, e.g. to satisfy the requirements of vector instructions~\cite{ia32} on \gls{call-stack} memory. In a conventional control flow, each \gls{call-stack-frame} contains the \gls{return-address} of the instruction following the subroutine call.}
+\end{figure}
+
+Memory allocation errors are possible when running out of \gls{call-stack} memory, although software engineering best practices aim to make this unlikely~\cite{misra-2012}. With known upper bounds on all recursions and in the absence of variable-length arrays with unknown upper bounds, a reasonable upper bound on the \gls{call-stack} memory requirement can be computed. This allows the \gls{call-stack} size to be chosen accordingly to ensure that it is sufficient for worst-case executions. Unlike with \gls{static-memory-allocation}, references can become invalid at runtime, if they are live when their scope ends~\cite{ISO:2018:III}. A common example of this is returning a reference to a local variable.
+
+\subsection{Heap Memory Allocation}
+\label{sec:heap_mem_alloc}
+
+\Gls{heap-memory} allocation, also known as \gls{dynamic-memory-allocation}, reserves memory with a dynamic lifetime from \gls{heap-memory}~\cite{os-concepts,ISO:2018:III,rust-ref}. Dynamically allocated memory remains valid regardless of scope (including the entry point of the program for some environments) and must be manually freed. It is typically used with variable size or large amounts of memory. Unlike the schemes discussed previously, dynamically allocated memory is not necessarily live until the end of its scope, intermediate memory can be freed as needed~\cite{ISO:2018:III}. Also, subroutines can return dynamically allocated memory, transferring ownership of it without creating a copy. These points can contribute to lower peak and average memory consumption. On the other hand, \gls{dynamic-memory-allocation} requires a complicated memory allocator~(e.g., the SLUB allocator~\cite{slub-alloc}). By its very nature, heap memory tends to become fragmented over time, which can reduce performance and efficiency for future allocations~\cite{slub-alloc}. To mitigate these problems, real-world operating system algorithms attempt to reduce and avoid fragmentation through means such as overallocation.
+
+There is no general method to derive reasonable upper bounds for memory consumption among other metrics with \gls{dynamic-memory-allocation}. Even if there were, \gls{heap-memory} fragmentation can gradually reduce the effective space available. Thus, it is generally not feasible to provide worst-case guarantees, which is why some embedded systems prohibit \gls{dynamic-memory-allocation} altogether, especially when they have to operate in real-time~\cite{rt-dynmem}. References to dynamically allocated memory may become invalid if they are live after the memory has been freed~\cite{ISO:2018:III}.
+
+\subsection{Memory Safety Violations}
+\label{sec:mem_violations}
+
+Because memory is a shared medium, any memory safety violation can have serious consequences. Especially in \gls{kernel-space} or \gls{firmware} contexts, rogue reads can expose secrets and rogue writes can hijack the control flow. The following is a brief description of the main classes of memory safety violations.
+
+\subsubsection{General Memory Safety Violations}
+
+All memory allocations have fixed bounds and are subject to the same data type rules. As such, there are common memory safety violations that are independent of the memory allocation scheme.
+
+\begin{itemize}
+  \item \textbf{\Gls{buffer-overflow}:} Accessing a memory buffer outside its allocated range. This may result in reads or corruption of subsequent memory.
+  \item \textbf{\Gls{null-pointer-dereference}:} Dereferencing a \lstinline[style=c]{NULL}-pointer. While this can happen in any context, \gls{dynamic-memory-allocation} is one of the most important sources of valid \lstinline[style=c]{NULL}-pointers~\cite{ISO:2018:III}. In particular, low-level software may map the \gls{memory-page} containing the \lstinline[style=c]{NULL} address~\cite{edk2}. In this case, the consequences are similar to \gls{use-after-free}~(see Section~\ref{sec:dyn_mem_viol}). The inventor of the \lstinline[style=c]{NULL}-pointer, Tony Hoare, has called this his `billion-dollar mistake'~\cite{null-ref-presentation}.
+\end{itemize}
+
+\subsubsection{Call Stack Memory Safety Violations}
+
+\Gls{call-stack-memory-allocation}, despite having no dynamic layout logic for its allocation scheme, features a unique safety violation. This is particularly relevant for \glsxtrshort{C} programs, as the compiler automatically manages the allocation and lifetime of \gls{call-stack} variables, but does not provide any safety guarantees.
+
+\begin{itemize}
+  \item \textbf{\Gls{use-after-scope}:} Accessing a \gls{call-stack} variable after its scope has ended. Due to automatic scope-based memory management, this immediately invalidates any reference to it.
+  \item \textbf{\Gls{call-stack-overflow}:} A \gls{buffer-overflow} with the \gls{call-stack} memory. This is special because the \gls{call-stack} stores the \gls{return-address} for the current function call. Successfully overwriting it may allow the execution of arbitrary code, depending on the platform's security mitigations.
+\end{itemize}
+
+\subsubsection{Dynamic Memory Safety Violations}
+\label{sec:dyn_mem_viol}
+
+\Gls{dynamic-memory-allocation} safety violations are among the most common and critical vulnerabilities in the software industry~\cite{buff-ovf}. For \gls{C} programs, it is particularly prone to human error due to manual lifetime management and limited analysis capabilities of the compiler.
+
+\begin{itemize}
+  \item \textbf{\Gls{use-after-free}:} Accessing a reference to previously dynamically allocated memory. If the address has been reused for new dynamically allocated memory, accessing the reference may read or corrupt unexpected memory.
+  \item \textbf{\Gls{double-free}:} Freeing a reference to previously dynamically allocated memory again. Depending on the implementation of the dynamic memory allocator, this may corrupt its metadata.
+\end{itemize}
+
+\section{Malware and Software Security}
+
+The classic example of a software attack is malware, which must be actively run on the target computer. It can freely execute code and can perform any action that is allowed within the \gls{user-space}, or potentially the sandbox, in which it was executed. While this is one of the simplest methods of a software attack, it requires conscious user interaction and is limited by the privileges of the environment in which it is invoked. In the past, malware had a relatively simple way of getting into the \gls{kernel-space} by asking the user to grant elevated privileges and install a \gls{kernel-space} driver. However, modern operating systems such as Windows, macOS, and Linux derivatives support \gls{kernel-space} driver \gls{digital-signature} authentication~(see Section~\ref{sec:image_auth}) in combination with \gls{secure-boot}~(see Section~\ref{sec:sb_mb}). This means that user-initiated privilege escalation alone is no longer sufficient to penetrate the \gls{kernel-space}. Recent versions of macOS on \glsxtrshort{Apple} silicon even require the user to enable loading of third-party \gls{kernel-space} drivers by booting into a special recovery environment, regardless of the driver's \gls{digital-signature}~\cite{macOS-security-settings}.
+
+Despite the best efforts to improve the security of operating systems and firmware, \gls{UEFI} malware still appears from time to time~\cite{eset-lojax,blacklotus}. To help combat this growing threat, we must first understand the very basics of common software exploits.
+
+\section{Memory Exploits}
+\label{sec:mem_exploits}
+
+Software exploits are a way of further attacking the \gls{kernel-space} and are usually stealthy. Rather than tricking the user into granting elevated privileges, they aim to trigger bugs in software (including \gls{kernel-space} drivers) that has or is expected to gain elevated privileges. A common family of attack vectors are the memory safety violations~(see Section~\ref{sec:mem_violations}) discussed earlier. A particularly interesting development in attacks is the move towards \gls{ROP}.
+
+One of the first sophisticated and widespread attacks was \gls{call-stack-smashing}, a technique for corrupting the \gls{call-stack} with attacker-controlled data~\cite{10.1007/978-3-642-33338-5_5}. Using \glspl{call-stack-overflow}, it was previously possible to place \gls{shellcode} on the \gls{call-stack}. By overwriting the \gls{return-address} of the current \gls{call-stack-frame}, the attacker could direct the control flow to that \gls{shellcode} to execute malicious code. In response, operating system kernels marked all \gls{call-stack} memory as non-executable~(see Section~\ref{sec:mem_perms}).
+
+\Gls{return-to-libc} is a spiritual successor proposed to work around the non-executable \gls{call-stack}. It still relies on overwriting the current \gls{return-address}, but instead of jumping to code controlled by the attacker, it targets code already in memory, so-called \glspl{code-gadget}. One of the most common targets was \gls{libc}, as it is loaded into the \gls{address-space} of almost all \gls{user-space} programs. As part of the demonstration of such an exploit, the reporter proposed the mitigation to fix \gls{call-stack-overflow} attacks based on zero-terminated \gls{ASCII} operations~\cite{libc-zero-byte}. However, it was successfully bypassed by using the \glsxtrshort{PLT}, which was not affected by the mitigation~\cite{libc-ex}.
+
+As the defences grew stronger, the attacks became more versatile, expanding their scope beyond \gls{libc} to other common \glspl{shared-library} as a source of \glspl{code-gadget}~\cite{10.1007/978-3-642-33338-5_5}. In order to exploit even small memory safety violations, sophisticated techniques have been developed to chain \gls{code-gadget} calls. These are now known as \gls{ROP}.
+
+While other families of memory exploits exist, such as \gls{heap-memory} and \glspl{format-string} attacks, they are not fundamentally different from the techniques discussed here. However, they dramatically expand the attack surface for memory exploits. Research conducted by leading low-level security teams has shown that memory exploits are by far the largest class of serious security vulnerabilities~\cite{10.1007/978-3-642-33338-5_5,mem-tag,gpz-zero-days,apple-mem-alloc}.
+
+\section{Image File Formats}
+
+\Glspl{image} capture memory content, layout, and state. They make it easy to bootstrap the program part of a process \gls{address-space}~\cite{levine2000linkers}. The executable part of an \gls{image} carries the program code, while the data part supports \gls{static-memory-allocation}, as discussed earlier~(see Section~\ref{sec:static_mem_alloc}). Because the common \gls{image-file} formats serve very similar purposes, there have been various design conventions and common concepts between them. These cover both the data structures used to describe the components of and the operations on the \gls{image-file} and \gls{image} \gls{address-space} itself. From them, a kind of abstraction can be sketched as follows.
+
+\subsection{Image File Parsing and the Image File Header}
+
+\Glspl{image-file} are generally header formats, meaning that they start with a data structure called \gls{image-file-header}, which contains information on how to interpret the rest of the file~(see Figure~\ref{fig:img_hdr})~\cite{levine2000linkers}. This includes information such as the \gls{image-base-address}~(see Section~\ref{sec:reloc}) and offsets of the \gls{image-file-section}~(see Section~\ref{sec:sections}) and \gls{image-segment}~(see Section~\ref{sec:segments}) tables. To easily distinguish between file formats, the \gls{image-file-header} usually starts with a multi-\gls{byte} \gls{file-magic-number}, a constant value to uniquely identify the format. There are usually also means to support newly introduced features while retaining backward compatibility, such as version numbers, feature flags, and data structure size information.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics{Figures/Header.pdf}
+  \caption{Image File Header.}
+  \label{fig:img_hdr}
+  \caption*{The \gls{image-file-header} is the data structure at the beginning of an \gls{image-file} that provides information about the rest of the data. It usually identifies the \gls{image-file} format with a \gls{file-magic-number}. From there, it indexes \glspl{image-segment}, \glspl{image-file-section}, the \gls{image-relocation} and debug tables, and optionally the \gls{digital-signature}.}
+\end{figure}
+
+In general, \gls{image-file} format designs work in such a way that they can be parsed by interpreting their control data as \gls{C} structures~\cite{elf-spec,macho-spec,pe-format}. Using pointer or address arithmetic, the various offsets in the \gls{image-file-header} can be used to access different data structures containing information on how to interpret or process the data. In the following, we will discuss \gls{image-file-loading}, \gls{static-linking}, \gls{dynamic-linking}, and \gls{image-relocation} as examples of operations on \glspl{image-file} and \glspl{image}, along with the data structures that enable them.
+
+\subsection{Image File Loading and Image Segments}
+\label{sec:segments}
+
+\Glspl{image} owe their name to the fact that they capture the content and state of memory~\cite{levine2000linkers}. The main tool for this purpose is \glspl{image-segment}~(for \glsxtrshort{PE} files, \glspl{image-file-section} and \glspl{image-segment} are a joint concept~\cite{pe-format}). They describe how to set up both the content of the \gls{image} \gls{address-space}~(e.g. copy or map memory from the \gls{image-file} or initialize with zero-values)~(see Figure~\ref{fig:img_segs}) and its \glspl{memory-permission}~\cite{elf-spec,macho-spec,levine2000linkers}. As such, they are most relevant to \gls{image-file-loading} and execution.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics{Figures/Segments.pdf}
+  \caption{Image Segments.}
+  \label{fig:img_segs}
+  \caption*{\Glspl{image-segment} compose the entire \gls{image} \gls{address-space}, both in terms of content and state~(e.g. \glspl{memory-permission}). In general, they do not logically organize content, but group it by their kind~(e.g. executable code, immutable data, mutable data, etc.).}
+\end{figure}
+
+Historically, the two most important \glspl{image-segment} are \texttt{text} and \texttt{data}. The former conventionally carries executable code, while the latter holds non-executable data, in particular statically allocated global variables~(see Section~\ref{sec:static_mem_alloc})~\cite{elf-spec,macho-spec,levine2000linkers}. In addition, \texttt{bss} stores uninitialized global variables~(implicitly defined as a zero-value in \gls{C}~\cite{ISO:2018:III}, among other languages) and generally does not occupy space in an \gls{image-file}, because it is initialized to all zero-values at load-time. Finally, to improve memory security, \texttt{rodata} was introduced to mitigate exploits such as overwriting \gls{format-string} literals by enforcing immutability. An alternative approach is to include read-only data in the \texttt{text} \gls{image-segment}~(see Section~\ref{sec:merge_ro_x}), which is also read-only~(see Section~\ref{sec:mem_wxorx}).
+
+\Gls{image-file-loading} is the process of transforming an \gls{image-file} into an \gls{image} \gls{address-space}~\cite{levine2000linkers}. In conjunction with \gls{virtual-memory} management, modern operating systems usually just memory-map the \glspl{image-segment} from the \gls{image-file} on the secondary storage into the process \gls{address-space}. \Gls{image-segment} components that are modifiable, such as \glsxtrshort{GOT}, work via \gls{COW} semantics. However, \gls{firmware} implementations, most notably \gls{UEFI}, generally do not support \gls{virtual-memory} management and instead copy the data explicitly into the main memory~\cite{pi-spec,uefi-spec,edk2}.
+
+To efficiently compose \glspl{image-segment}, \gls{image-linker} use \glspl{image-file-section} to categorize different types of data and code~\cite{levine2000linkers}. We will explain this composition process in more detail below.
+
+\subsection{Image File Static Linking and Image Sections}
+\label{sec:sections}
+
+\Glspl{image-file-section} are units to logically organize the data of an \gls{image}~(see Figure~\ref{fig:img_secs})~\cite{elf-spec,macho-spec,pe-format,levine2000linkers}. For \glsxtrshort{ELF}, \glsxtrshort{MACHO}, and \glsxtrshort{COFF} files, this can be a very granular organization, depending on the build toolchain. For example, \glsxtrshort{MACHO} \glspl{executable-file} generated by the \glsxtrshort{Apple} Xcode toolchain have a dedicated \texttt{cstring} \gls{image-file-section} for string literals~\cite{macho-spec}. \Glsxtrshort{ELF} compilers may generate \glspl{object-file} that go as far as having an \gls{image-file-section} per function and global datum to enable dead code and data garbage collection and improving locality~\cite{gcc}. \Glspl{image-file} of both formats generally have \glspl{image-file-section} for \gls{image-relocation-fixup} and \gls{image-symbol} table information~\cite{elf-spec,macho-spec}. For \glsxtrshort{PE} files, the organization is generally not granular, as they double as \glspl{image-segment}~(see Section~\ref{sec:segments})~\cite{pe-format}.
+
+\Gls{static-linking} combines several \glspl{image-file} into a joint \gls{library} or \gls{executable-file}~\cite{levine2000linkers}. As suggested earlier, the \gls{image-linker} can use information about references to an \gls{image-file-section} to garbage-collect dead code and data. Not considering the specific configuration, \gls{static-linking} essentially merges all data structures, including \glspl{image-segment}, \glspl{image-file-section}, and \glspl{image-relocation-fixup}. One use case is to include \glspl{static-library}, which is a consumable collection of useful functions and data, within an \gls{executable-file}.
+
+One notable implication is that, if multiple \glspl{executable-file} consume the same function or datum, it will be duplicated across the processes' \glspl{address-space}~\cite{levine2000linkers}. To mitigate this, where beneficial, we will now introduce the concept of \gls{dynamic-linking}.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics{Figures/Sections.pdf}
+  \caption{Image File Sections.}
+  \label{fig:img_secs}
+  \caption*{The data that make up an \gls{image-segment} are bundled into chunks managed by \glspl{image-file-section} so that the \gls{image-linker} can flexibly move, rearrange, and merge them at link-time. This has several advantages, from garbage collection of unreachable code and unreferenced data to optimization of the binary layout.}
+\end{figure}
+
+\subsection{Image Dynamic Linking and Image Symbols}
+\label{sec:dyn_link}
+
+\Gls{user-space} programs usually share a lot of code. The most prominent example is \gls{libc}~\cite{gcc}, but operating systems also provide various \glspl{API} to handle user, hardware, and software interaction. To include this shared code in each program individually would result in huge binaries and potentially cause caching problems, as frequent accesses to the same code and data technically target different memory.
+
+To efficiently share code between programs, \glspl{shared-library} complement \glspl{static-library} and \gls{dynamic-linking} complements \gls{static-linking}~\cite{levine2000linkers}. Essentially, only one copy of the \gls{shared-library} is loaded into the main memory, and any dependent \glspl{image} do not resolve their dependencies on it at build-time, but at load-time or runtime. This works by indexing \glspl{image-symbol}, which are essentially named addresses of functions and global data. Dependencies can instruct the \gls{dynamic-linker} to resolve the address of the symbol and adjust the \gls{image} memory to reference it, similar to \glspl{image-relocation-fixup}. Typically, a common data structure can describe both \gls{dynamic-linker} instructions within the \gls{image-relocation} table~\cite{elf-spec,macho-spec}.
+
+\Gls{dynamic-linking} can be done eagerly or lazily~\cite{levine2000linkers}. In the former case, the load time of the program increases, because the \gls{dynamic-linker} resolves all \glspl{image-symbol} even if they may never be accessed during the lifetime of the \gls{image}. In the latter case, function references can be resolved the first time they are used by implementing a stub indexed by the \glsxtrshort{PLT}. However, this requires the resolution targets to be writable at runtime. Thus, high-security configurations typically force the use of eager \gls{dynamic-linking}.
+
+Since every executable \gls{address-space} is different, there is no way to guarantee that the \gls{image-base-address} of a \gls{shared-library} will be available across all of its consumers~\cite{ms-dll-base-addr}. Furthermore, avoiding predictable addresses can be a powerful tool for making memory exploits less reliable. The solution to both is \gls{image-relocation}, which we will discuss next.
+
+\subsection{Image Relocation and Position-Independence}
+\label{sec:reloc}
+
+Modern operating systems have complex requirements for the dynamic loading of \glspl{shared-library}, drivers, and applications. This includes the ability to load \glspl{image} at arbitrary addresses~(see Section~\ref{sec:dyn_link}). This can also be used to increase resilience against various software exploits by using \gls{pseudo-randomization} for the load address of \glspl{image} as part of \gls{ASLR}~\cite{app9142928}. Binaries that support being moved are commonly referred to as \gls{PIC}~\cite{levine2000linkers}. Not all binaries are inherently position-independent, as the compiler may generate \glsxtrshort{CPU} instructions or data with absolute addresses to data within the \gls{image}. This may happen because the target \gls{ISA} has poor support for \gls{relative-addressing}, absolute addressing may be more performant, or there are global pointers-to-pointers initialized at compile-time.
+
+A common part of solving the problem of position dependency is the indexing and processing of \glspl{image-relocation-fixup}~(see Figure~\ref{fig:imgreloc})~\cite{levine2000linkers}. In this context, they are instructions to the \gls{image-file-loader} on how to modify \glsxtrshort{CPU} instructions and addresses to execute from a specific address. The \gls{dynamic-linker} links the \gls{image} to run at an address specified at build-time, commonly referred to as the \gls{image-base-address}. \Glsxtrshort{CPU} instructions and addresses that require absolute addressing to data in the \gls{image} get \glspl{image-relocation-fixup} indexed, which tell the \gls{image-file-loader} where and how to update them. \Glsxtrshort{CPU} instructions that do not trivially encode absolute addresses get fixed by \glspl{image-relocation-fixup} that are specific to the host architecture declared by the \gls{image-file-header}~\cite{elf-spec,pe-format,arm64-elf}. The \gls{image-file-loader} then processes the \glspl{image-relocation-fixup} as part of \gls{image-file-loading} by adding the offset of the \gls{image-base-address} and the final load address to the relocatable address in the manner required by the \gls{image-relocation-fixup} type~\cite{levine2000linkers}. In a different context, \gls{static-linking} also uses \glspl{image-relocation-fixup}, but they are typically indexed differently~(i.e. per \gls{image-file-section} rather than for the whole \gls{image}) and have different semantics~(e.g. for \gls{relative-addressing} across \glspl{image-file-section}).
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics{Figures/RelocFixups.pdf}
+  \caption{Image Relocation Fixups.}
+  \label{fig:imgreloc}
+  \caption*{The \gls{image-relocation} table contains \glspl{image-relocation-fixup} which tell the \gls{image-file-loader} how to update the \gls{image} \gls{address-space} when moving it from the \gls{image-base-address}~(where `delta' is their difference). The dashed lines visualize the absolute addresses that the \glspl{image-relocation-fixup} target within the \gls{image} \gls{address-space}.}
+\end{figure}
+
+\gls{UEFI} has adopted this model of dynamic \gls{image-file-loading} to meet its own needs for dynamic driver dispatching and execution of arbitrary applications at operating system runtime~\cite{pi-spec,uefi-spec}. It has also extended it with the notion of \gls{runtime-image-relocation}. This allows the operating system to map memory required by \gls{UEFI} during the operating system runtime to non-identity \gls{virtual-memory} addresses. It enables \gls{KASLR} to be extended to include \gls{UEFI} runtime memory~\cite{xnu}.
+
+\subsection{Additional Metadata and Extensibility}
+
+Beyond the essential data, \gls{image-file} formats often support some form of metadata extensibility~\cite{elf-spec,macho-spec,pe-format}. This can be debugging information, for example, to help developers with the development process. In general, most \glspl{image-file} formats support special \glspl{image-file-section} with predefined names. However, this requires the metadata to be mapped into the \gls{image} address space, which is not always desirable. Therefore, some formats provide maps of identifiable data structures, which may or may not point to data in the \gls{image} \gls{address-space}~\cite{macho-spec,pe-format}. Some also define \gls{image-file-header} data structures with flexible sizes to ensure extensibility and backward compatibility~\cite{elf-spec}.
+
+\subsection{Image Authentication and Cryptographic Hashes}
+\label{sec:image_auth}
+
+For security reasons, operating systems and \gls{firmware} implementations usually authenticate \glspl{image-file}. This ensures that the \glspl{image-file} has been approved by a trusted entity and has not been tampered with by a third party. This is achieved by using \glspl{digital-signature}, which leverage asymmetric cryptography to securely sign the \glspl{image-file}. The public key in this scheme can be used to verify that the \gls{digital-signature} is correct and that the \glspl{image-file} is authentic. \Gls{image} authentication is the basis of \gls{UEFI} \gls{secure-boot} and \gls{measured-boot}~(see ~\ref{sec:sb_mb}).
+
+There are two approaches to \gls{image} authentication. The first is to digitally sign the \gls{image-file} itself. This is a simple scheme that ideally cryptographically hashes the entire file in one piece~(see Figure~\ref{fig:img_file_sig}).
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics{Figures/Signature.pdf}
+  \caption{Digital Signature based on the Image File.}
+  \label{fig:img_file_sig}
+  \caption*{An \gls{image} authentication scheme that digitally signs the \gls{image-file} itself. It may cover the entire \gls{image-file} or only a subset of it~(e.g. see Section~\ref{sec:authenticode}). However, it must cover the \gls{image} \gls{address-space} implicitly, i.e. all \glspl{image-segment}, to be secure.}
+\end{figure}
+
+Hashing the \gls{image} \gls{address-space}~(see Figure~\ref{fig:img_sig}) has the advantage that it integrates well with the \gls{virtual-memory} approach to \gls{image-file-loading} and \gls{memory-swapping}. Technically, individual \gls{image} \glspl{memory-page} can be lazily loaded many times throughout the lifetime of the \gls{image}. To prevent \gls{TOC-TOU} attacks, they should ideally be authenticated each time they are fetched from secondary memory. One approach to this is to store a data structure containing \glspl{cryptographic-hash} for each memory-mapped \gls{memory-page} of the \gls{image-file} and then digitally sign it. Now, each time a \gls{memory-page} is fetched, its \gls{cryptographic-hash} can be compared to the in-memory copy of the data structure copy to authenticate it quickly and lazily. Since the entire \gls{image-file} is usually memory-mapped, which is pretty much mandatory to take full advantage of \gls{virtual-memory} in this context, this implicitly authenticates the entire \gls{image-file}.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics{Figures/SignatureAlt.pdf}
+  \caption{Digital Signature based on the Image Address Space.}
+  \label{fig:img_sig}
+  \caption*{An \gls{image} authentication scheme that digitally signs the \gls{image} \gls{address-space} directly. To enable lazy loading and thus authentication of \gls{image} \glspl{memory-page}, it is particularly useful to store a map of their cryptographic hashes. If the entire \gls{image-file} is memory-mapped, as is typical for \gls{image-file-loading} powered by \gls{virtual-memory}, it is implicitly authenticated as a whole.}
+\end{figure}
+
+Similar concepts of nested cryptographic hashing and lazy authentication can be found in the field of filesystems~\cite{apfs}. Because they have a hierarchical structure rather than a flat one, it is desirable to be able to lazily authenticate each level on demand. This is done not just by using two levels of \glspl{cryptographic-hash}, but by computing a tree of them, where a parent hashes the aggregated hashes of all its children~\cite{merkle-trees}. This is known as a Merkle tree, a generalization of the nested cryptographic hashing concept.
+
+\section{Problem Statement and Proposals}
+
+As we have seen, memory safety violations are a significant and critical threat to system security and parsing in particular is a likely source of them. Current \gls{UEFI} \gls{firmware} provides only a few of the state-of-the-art defences employed by operating systems. At the same time, there are tight constraints on the platform code size, such that space efficiency is a valid concern. The \gls{UEFI} Forum's previous attempt at a new \gls{executable-file} format in the form of \glsxtrshort{TE} failed to address both security and space efficiency concerns with the existing \glsxtrshort{PE} specification and infrastructure~(see Section~\ref{sec:te})~\cite{secure-pe}.
+
+In addition, \gls{image-file} modification and conversion are crucial for building \gls{UEFI-PI} and \gls{UEFI} software, especially for the \gls{EDK2} build system~(see Section~\ref{sec:img_conv}). However, the existing tools all rely on direct conversion between formats and do not have sufficient testing in place. As a result, the generated \glspl{image-file} are often malformed or insecure~\cite{gnu-efi-fix,ipxe-fix}.
+
+In response, we propose a novel \gls{executable-file} format to reduce the attack surface for parsing errors and bugs, as well as the complexity of the parser itself, while also rethinking the encoding of the metadata to increase the space efficiency. To generate files of this format, we also propose a novel \gls{executable-file} conversion stack that relies on an intermediate representation to abstract and validate the conversion process.
+
+\section{Outline}
+
+After this brief introduction to \glspl{image}, their basic concepts, and the importance of secure parsing, we will now give an outline of this thesis.
+
+First, we will discuss related work in Chapter~\ref{chap:related_work}. In particular, we are interested in common real-world \gls{image-file} formats and their design in the context of modern operating systems, our target environment \gls{UEFI}, and related safety and security practices.
+
+Chapter~\ref{chap:uefi_exec_reqs} begins our contribution with requirements engineering for our proposal of a novel \gls{UEFI} \gls{executable-file} format. We will then define an abstraction of \gls{UEFI} \glspl{executable-file} from its results and common practices across \gls{image-file} format designs.
+
+We will detail design considerations that combine industry best practices in encoding and parsing with the requirements and guarantees of \gls{UEFI}, for such a novel format in Chapter~\ref{chap:uefi_exec_design}.
+
+In Chapter~\ref{chap:uefi_exec_impl}, we will explain the architecture and principles of the implementation, together with our testing techniques and methodology.
+
+Finally, we will conclude the thesis with our results in Chapter~\ref{chap:results}, our conclusion in Chapter~\ref{chap:conclusion}, and future work in Chapter~\ref{chap:future_work}.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \chapter{Related Work} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\label{chap:related_work}
 
-\blindtext[2]
-\cite{Tolk12}
+To get a good understanding of the foundation of \glspl{image} and \gls{image-file} formats, we will first discuss common formats used across a variety of operating systems and \gls{firmware} implementations~(see Section~\ref{sec:cmn_formats}). Then, we will look into different kinds of \gls{image} authentication schemes~(see Section~\ref{sec:cmn_sigs}).
 
+% TODO: ... {sec:uefi_solutions}
+
+\section{Common Image File Formats}
+\label{sec:cmn_formats}
+
+For workstations, both home and commercial, and servers, the most common operating systems are \glsxtrshort{Microsoft} Windows, \glsxtrshort{Apple} macOS, and operating system distributions based on the Linux kernel. In the following, we will introduce their respective preferred \gls{image-file} formats and their basic design ideas.
+
+\subsection{Executable and Linkable Format (ELF)}
+\label{sec:elf}
+
+A common \gls{image-file} format for UNIX- and Linux-based operating systems is the \glsfirst{ELF}. Formerly specified by the \gls{TIS} Committee~\cite{elf-spec}, it is now managed by \gls{SCO} as part of the System V and other \gls{ABI} specifications~\cite{sysVGABI,sysVUpdate,arm64-elf}. Architecture-specific details of the format, such as specific \gls{image-relocation-fixup} types, are defined separately in the \gls{ISA}-specific \gls{ABI} specifications~\cite{sysVUpdate,sysVi386,arm64-elf}.
+
+The design of the \gls{image-file} format suits the needs of \gls{static-linking}, \gls{dynamic-linking}, and execution. The different views for the two \gls{image} linking scenarios can be seen in Figure~\ref{fig:elf_link_exe}.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics{Figures/ELF.pdf}
+  \caption{`Object File Format'~(Figure 1-1.)~\cite{elf-spec}.}
+  \label{fig:elf_link_exe}
+  \caption*{The \glsxtrshort{ELF} file views for \gls{image} linking compared to execution. \Gls{image} linking is primarily concerned with \glspl{image-file-section}, the smaller building block for \glspl{image-file}. \Glspl{image-file-section} generally categorize types of content. Often, categories such as `debug data' and `string literals' are grouped into a common \gls{image-file-section}. For \glspl{object-file}, they may only cover a single function or datum. \Gls{image} loading and execution work with \glspl{image-segment}, the larger building blocks that are made up of \glspl{image-file-section}. \Glspl{image-segment} generally categorize data into \gls{memory-permission} groups. For example, this may be `executable code' or `read-only data'. The content of the data is not relevant to \gls{image} execution.}
+\end{figure}
+
+\subsubsection{Position-Independence, GOT, and PLT}
+
+Several \glspl{executable-file} can use the same \gls{shared-library}. It must therefore be mapped into all of their respective process \glspl{address-space}. Immutable \glspl{image-segment} will remain the same in all of them. For this reason, operating systems usually load these \glspl{image-segment} only once and map them into all consumer process \glspl{address-space}~\cite{ms-dll-base-addr,xnu,linux}. The Linux kernel in particular makes extensive use of \gls{COW}, a technique for sharing code and data as immutable across arbitrarily many consumers and duplicating it when written to, for such purposes~\cite{linux}. For process \glspl{address-space}, this is implemented by mapping the \gls{memory-page} as read-only and hooking the \gls{page-fault} handler to duplicate it.
+
+Technically, read-only \glspl{image-segment} can still be targeted by \glspl{image-relocation-fixup}. This will cause the same problems as described above for writable \glspl{image-segment} and may duplicate many to most of the associated \glspl{memory-page} via \gls{COW}. To reduce this amount of \glspl{memory-page}, the \glsfirst{GOT} was introduced to indirect memory accesses to externally linked data~(see Figure~\ref{fig:got})~\cite{levine2000linkers,elf-spec}. By using \gls{relative-addressing} for \glsxtrshort{GOT} accesses, this makes these \glspl{image-segment} truly immutable, and thus they will never be subject to \gls{COW} duplication.
+
+The \glsfirst{PLT} follows the same ideas as the \glsxtrshort{GOT}, but it solely targets executable code~\cite{levine2000linkers,elf-spec}. To indirect such, the \glsxtrshort{PLT} carries stubs for all indirected subprocedures.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics{Figures/GOT.pdf}
+  \caption{Image Global Offset Table.}
+  \label{fig:got}
+  \caption*{The \glsxtrshort{GOT} is an indirection layer to avoid process-specific \glspl{image-relocation-fixup} to read-only \glspl{image-segment}. In particular, it indirects all \gls{image} memory accesses via absolute addresses. In the case of \glspl{PIE}, all accesses to \glsxtrshort{GOT} itself are relative. Different processes can map the same \gls{shared-library} to different load addresses. To account for this, each process has a copy of the \glsxtrshort{GOT} with the absolute addresses corresponding to its own \gls{address-space}. The dotted line visualizes the \glspl{image-relocation-fixup} that allow read-only \glspl{image-segment} to address \glsxtrshort{GOT} or other data strictly within the own \gls{image} \gls{address-space}~(applies only to non-\glspl{PIE}).}
+\end{figure}
+
+\subsubsection{RELR and RELRO}
+
+In recent years, RELR has established itself as the most efficient encoding for relative \glspl{image-relocation-fixup} in \glsxtrshort{ELF} to date~\cite{elf-relr}. The idea is to store the address of a relocation target along with a bitmap of adjacent locations to relocate. The idea is to take advantage of the locality of relative \glspl{image-relocation-fixup}, e.g. such as those issued for global pointer arrays.
+
+As mentioned before, lazy \gls{dynamic-linking} requires the \gls{image-relocation} targets to be writable, which may allow attackers to hijack them~(see Section~\ref{sec:dyn_link}). \Glsxtrshort{ELF}'s solution to this is \glsfirst{RELRO}, which, when fully enabled, forces eager \gls{dynamic-linking} and marks \glsxtrshort{GOT} and \glsxtrshort{PLT} as read-only when done~\cite{ld}. Partial \glsxtrshort{RELRO} is supported, but not recommended for security reasons.
+
+\subsection{Mach Object File Format (Mach-O)}
+\label{sec:macho}
+
+The default \gls{image-file} format for \glsxtrshort{Apple} operating systems, such as macOS, iOS, and watchOS, is the \glsfirst{MACHO}~\cite{macho-spec}. At a high level, it is very similar to \glsxtrshort{ELF}, especially regarding \gls{PIC}, which is the default mode for the \glsxtrshort{Apple} Xcode toolchain. However, unlike \glsxtrshort{ELF}, which requires features such as \glsxtrshort{RELRO}, initial and maximum protection levels are part of the \glsxtrshort{MACHO} core design for \glspl{image-segment}.
+
+To reduce the memory footprint of \glspl{image-file}, \glsxtrshort{Apple} introduced the concept of \gls{chained-image-relocation-fixups}~\cite{dyld_chains}. The high-level idea is that the \glsxtrshort{MACHO} format manages \glspl{image-relocation-fixup} as linked lists within the \gls{image-segment} data, rather than each entry taking up space in the \gls{image-relocation-fixup} table~(see Figure~\ref{fig:fixup_chains}). They are addressed relatively within the same \gls{memory-page}, so only require an $log_2(4096) = 12$-bit offset.
+
+Furthermore, their design addresses an issue of temporally separate accesses to the same \glspl{memory-page}, which may require \gls{memory-swapping} during \gls{dynamic-linking}~\cite{dyld_chains}. Namely, \gls{image-relocation} and \gls{dynamic-linking} are unified as a single step for each \gls{image-relocation-fixup}, requiring only a single pass over each \gls{image-segment} \gls{memory-page}.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics{Figures/FixupChain.pdf}
+  \caption{Image Relocation Fixup Chains.}
+  \label{fig:fixup_chains}
+  \caption*{Similar to Figure~\ref{fig:imgreloc}, but singly linked chains organize the \glspl{image-relocation-fixup}. As all the necessary information resides in the \gls{image-relocation} target, this helps to reduce the size of the \gls{image-file} and decreases the number of memory accesses outside the same \gls{memory-page}. This is implemented by the \glsxtrshort{MACHO} format for \glspl{image-relocation-fixup} of the same type within the same \gls{memory-page}.}
+\end{figure}
+
+\subsection{Portable Executable and Common Object File Format (PE/COFF)}
+\label{sec:pecoff}
+
+For the \glsxtrshort{Microsoft} Windows operating system, \glsxtrshort{Microsoft} primarily uses the \glsfirst{PECOFF}~(see Figure~\ref{fig:pe_layout})~\cite{pe-format}. It is also the primary format specified by the \gls{UEFI-PI} and \gls{UEFI} specifications~\cite{pi-spec,uefi-spec}. Unlike \glsxtrshort{ELF} and \glsxtrshort{MACHO}, \glsxtrshort{PECOFF} combines the concepts of \glspl{image-segment} and \gls{image-file-section} under the latter's name~\cite{pe-format}.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics{Figures/PE.pdf}
+  \caption{Portable Executable File Organization.}
+  \label{fig:pe_layout}
+  \caption*{Example \glsxtrshort{PE} file layout. The MS-DOS stub is virtually unused and is only a relic for backward compatibility. Due to the dual nature of \glsxtrshort{PE} and \glsxtrshort{COFF} files, there are separate data structures to describe metadata for both use cases, namely the Optional Header and the COFF File Header. The multiple layers of headers add to the complexity of \glsxtrshort{PE} parsing~\cite{secure-pe,audk}. The \glspl{image-file-section} double as \glspl{image-segment}. Optionally, there is a trailing certificate table that contains \glspl{digital-certificate}.}
+\end{figure}
+
+To compress the \gls{image-relocation} directory, \glsxtrshort{PE} introduced the concept of Base Relocation Blocks~\cite{pe-format}. They consist of a $4$ KiB aligned base address within the \gls{image} \gls{address-space} and a variable size list of Base Relocations~(\glspl{image-relocation-fixup}). By indexing the \glspl{image-relocation-fixup} per $4$ KiB block, they only store their offset within the block, which requires only $12$ bits instead of the $32$ or $64$ needed for a full address.
+
+\glsxtrshort{PE} suffers from dangerous data duplication, e.g. it has several \lstinline|SizeOf*| fields, such as \lstinline|SizeOfImage|, with sums of certain or all  kinds of \glspl{image-segment} sizes~\cite{pe-format}. Relying only on their values alone may cause \glspl{buffer-overflow} if they do not match reality~\cite{secure-pe}. However, to validate them, one needs to recompute the values from the \gls{image-segment} information. Therefore, for many use cases, it may be best to ignore these fields, as done by the \gls{AUDK} \glsxtrshort{PE} loader~\cite{audk}.
+
+There are also unintuitive design choices that confused reviewers of the `Securing the EDK II Image Loader' publication~\cite{secure-pe}. For example, the number of \glspl{image-relocation-fixup} within a block must always be even~\cite{secure-pe}. This is, because \glspl{image-relocation-fixup} information has a \gls{data-alignment} requirement of $2$ \glspl{byte}, while blocks must start on a $4$ \gls{byte} boundary~\cite{pe-format}. An odd amount of \glspl{image-relocation-fixup} must be padded with another of type \lstinline|IMAGE_REL_BASED_ABSOLUTE|, which is skipped during \gls{image-relocation}.
+
+\subsection{Backward Compatible Position-Independence}
+
+The notion of \gls{PIC} is different for the \glsxtrshort{PE} format compared to \glsxtrshort{ELF} and \glsxtrshort{MACHO}. \Glspl{image-relocation-fixup} can target read-only \glspl{image-segment} even for \glsxtrshort{PE} \glspl{shared-library}, which means that, unlike their counterparts in the other formats, most of their \glspl{memory-page} could not be shared if they were loaded at different load addresses across process \glspl{address-space}~\cite{ms-aslr}. Note that not sharing significant portions of \gls{shared-library} memory removes most of the benefits of the concept.
+
+With the introduction of \gls{ASLR}, the Windows kernel started pseudo-randomizing the load address of \glspl{shared-library} and \gls{executable-file}~\cite{ms-aslr}. Before the introduction of \gls{ASLR}, this was the \gls{image-base-address} and collisions caused an \gls{image-relocation} of the \gls{shared-library} and thus creating a copy. For this reason, \glspl{image-base-address} used to be carefully chosen to minimize the risk of collisions between process \glspl{address-space}. To avoid requiring changes to the existing design of \glspl{shared-library}, and to mitigate the \gls{COW} penalty mentioned above, it still tries to load multiple instances of a \gls{shared-library} at the same load address across all processes~\cite{ms-dll-base-addr}. To do this, it keeps track of the previous \gls{ASLR} allocations and only draws the address from the available ranges. The \gls{image-file} is then fixed up when it is loaded from secondary memory, so that it appears to the rest of the existing \gls{shared-library} stack as if the \gls{image-base-address} was the \gls{ASLR} address, and it happened to be available. In case of a collision, the \gls{shared-library} still needs to be duplicated, but this is not a regression from the previous design. On the contrary, the \gls{pseudo-randomization} reduces the risk of collisions compared to the previous manual optimization.
+
+This approach has the obvious disadvantage that one process can learn information about another's \gls{address-space} via a \gls{side-channel}. It also has to explicitly handle the case of an address collision, unlike \glsxtrshort{ELF} and \glsxtrshort{MACHO}, potentially leading to increased memory consumption~\cite{ms-dll-base-addr}. Support for \gls{PIC} as implemented by the other formats has not been added to the \glsxtrshort{PE} specification or \gls{MSVC}~\cite{pe-format}.
+
+\subsection{Merging Read-Only Data with Executable Code}
+\label{sec:merge_ro_x}
+
+To reduce the impact of increased memory space requirements due to \gls{memory-page} boundary padding when tightening \glspl{memory-permission}, some build systems merge read-only data with executable code on the same \gls{memory-page}~\cite{macho-spec,edk2}. This preserves immutability, meaning that the affected data cannot be corrupted to hijack the control flow. This is particularly important, because \glspl{static-memory-allocation} can affect computations, or the control flow directly, e.g. lookup tables, function tables, and so on.
+
+At the same time, the more executable code there is, the more likely there is to be a suitable \gls{code-gadget} naturally increases. Unfortunately, we have not been able to find any meaningful research on the impact of this.
+
+\section{Common Image Authentication Schemes}
+\label{sec:cmn_sigs}
+
+% TODO:
+
+To support \gls{image} authentication
+
+\subsection{Linux Module Signature Format}
+
+\glsxtrshort{ELF} does not currently support \glspl{digital-signature}~\cite{elf-spec}. \Gls{user-space} applications and \glspl{library} are generally not digitally signed. To work around this limitation, the Linux kernel introduced the Linux Module Signature Format~(see Figure~\ref{fig:linux_sig})~\cite{linux}. This is a trailer-based format independent of \glsxtrshort{ELF} that is appended to a Linux module to digitally sign it. The \gls{digital-signature} covers the whole \gls{image-file}~(see Figure~\ref{fig:img_file_sig})~\cite{linux}.
+
+Unfortunately, this introduces a slight ambiguity that is not trivial to resolve. Namely, the \gls{image-file-loader} could process any Linux Module that has the Linux Module Signature Format \gls{file-magic-number} at the end, e.g. as an unrelated datum at the end of its last \gls{image-file-section}, as if it were digitally signed, even if it is not. To mitigate this, the Linux module needs to have some information about its file size, which for \glsxtrshort{ELF} files can only be obtained by parsing the \gls{image-file-section} table~\cite{elf-spec}. While this is unlikely to cause any security or real-world usability problems in practice, it may be relevant for possible formalization efforts in the future.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics{figures/LinuxSig.pdf}
+  \caption{Linux Module Signature Format~\cite{linux-kmod-sig}.}
+  \label{fig:linux_sig}
+  \caption*{The Linux Module Signature Format is trailer-based and independent of \glsxtrshort{ELF}. The trailer \gls{file-magic-number} \lstinline{\"\~Module signature appended\~\"} identifies a Linux Module to which a \gls{digital-signature} has been appended. The \gls{file-magic-number} is preceded by the \gls{digital-signature} header, which contains the information needed to process the \gls{digital-signature}, such as the \gls{cryptographic-hash} function and the \gls{digital-signature} size. Finally, the actual \gls{digital-signature} is located before the header.}
+\end{figure}
+
+\subsection{Code Directory Hash and Image4 Signature Formats}
+\label{sec:cdhash}
+
+\glsxtrshort{Apple} operating systems generally use the Code Directory Hash~(cdhash) \gls{digital-signature} format for \gls{user-space} applications and \glspl{library}~\cite{apple-cdhash,apple-cdhash-old}. It stores a data structure with a \gls{cryptographic-hash} for each \gls{memory-page} of the \glsxtrshort{MACHO} \gls{image}, as this allows code authentication when loading them lazily during execution~(see Figure~\ref{fig:img_sig}).
+
+For the boot process, including \gls{secure-boot}, \glsxtrshort{Apple} platforms use their proprietary Image4 format~\cite{xnu,opencore}. Like the Linux Kernel Module Signature Format, it hashes the module as a whole. However, it is not just a simple appended \gls{digital-signature}, but a sophisticated dictionary of various data stored in a separate file. For example, it may contain a unique machine identifier to allow personalized \glspl{digital-signature}.
+
+\subsection{Authenticode PE Signature Format}
+\label{sec:authenticode}
+
+\Gls{authcode} is used by \glsxtrshort{Microsoft} for its operating systems, most notably Windows~\cite{pe-authenticode}. It is also the scheme adopted by the \gls{UEFI} specification for \gls{secure-boot}, as there is no viable alternative for \glsxtrshort{PE} files. It is by far the most complicated \gls{image} authentication scheme out of the four we cover~(see Figure~\ref{fig:authcode}), while at the same time not integrating well with \gls{virtual-memory}. The hashing algorithm skips over some data in the \gls{image-file-header} and its implementation for \glspl{executable-file} used to tolerate trailing data~\cite{jar-msi-auth-bug}. Part of its complexity is to increase debugging flexibility~\cite{pe-authenticode}, but it also significantly weakens its security properties. There have been several theoretical and practical attacks against this \gls{image} authentication scheme, targeting both Windows and \gls{UEFI} implementations~\cite{secure-pe,jar-msi-auth-bug,mic-auth-bug,win-auth-bug,uefi-auth-bug}.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics{Figures/AuthCode.pdf}
+  \caption{PE File Coverage by the Authenticode Scheme.}
+  \label{fig:authcode}
+  \caption*{The \glsxtrshort{PE} data covered by the \gls{authcode} hash scheme. It cryptographically hashes data with a white background but not data with a grey background. `Unowned Data' refers to data that is not covered by any \glsxtrshort{PE} \gls{image-file-section} or data structure. In particular, any data following the Attribute Certificate Directory is not part of the \glsxtrshort{PE} \gls{authcode} \gls{cryptographic-hash}~\cite{pe-authenticode}.}
+\end{figure}
+
+\section{UEFI Solutions and Reference Implementations}
+\label{sec:uefi_solutions}
+
+% TODO:
+
+\subsection{Terse Executable File Format}
+\label{sec:te}
+
+Many hardware designs have a very limited \gls{firmware} storage space budget. For \glsxtrshort{Intel} architecture platform, the \gls{firmware} often resides on a \gls{SPI} storage chip that may only provide a few tens of mebibytes of space. The \glsfirst{TE} format is a curious approach to reducing the size of \glsxtrshort{PE} files~\cite{pi-spec}. Essentially, it replaces the multi-layer \gls{PE} \gls{image-file-header} with a single, denser \gls{image-file-header}~(see Figure~\ref{fig:pe-vs-te}). However, the conversion does not fix the internal offsets --- this must be done by the \gls{image-file-loading}~\cite{pi-spec,edk2} --- and it is unlikely to reduce the size of \gls{memory-page}-aligned \gls{XIP} \glspl{image-file}.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics{Figures/PEvsTE.pdf}
+  \caption{UEFI PI Terse Executable File Format.}
+  \label{fig:pe-vs-te}
+  \caption*{The \gls{UEFI-PI} specification defines the \glsxtrshort{TE} format in an attempt to reduce the size of \glspl{image-file} compared to their \glsxtrshort{PE} counterparts. This is achieved by removing the \glsxtrshort{PE} \gls{image-file-header} up to the \glsxtrshort{PE} \gls{image-file-section} table and replacing it with a new \glsxtrshort{TE} \gls{image-file-header}. The internal offsets remain unchanged and instead \texttt{StrippedSize} is exposed to the \gls{image-file-loader} so that it can consider the shift in data offsets.}
+\end{figure}
+
+The simpler parsing properties of having only a single, simple \gls{image-file-header} are contrasted by the complexity of considering the shift in data offsets and the semantic change to the \gls{image} \gls{address-space}. For \gls{XIP} files, the replacement of the \gls{PE} \gls{image-file-header} also shifts the addresses of all \glspl{image-segment}~\cite{secure-pe}. To account for this, \gls{EDK2}'s \textit{PeiCore} has a workaround to apply the shift to the load address, so that the \gls{image-file-header} is technically misaligned, but the \glspl{image-segment} are correctly aligned~\cite{edk2,secure-pe}. This is especially important when enforcing \glspl{memory-permission} during \glsxtrshort{PEI}.
+
+\subsection{EFI Development Kit II}
+
+The reference implementation of \gls{UEFI-PI} and \gls{UEFI} named \gls{EDK2} is maintained by the TianoCore community under an open-source licence~\cite{edk2}. Most common \gls{UEFI} implementations on the market fork and extend it, such as \glsxtrshort{Microsoft} Project Mu~\cite{mu-basecore}. The \gls{SDK} includes most of the microarchitecture-independent components of the \gls{UEFI-PI} and \gls{UEFI} specifications, as well as some \gls{ISA}- and microarchitecture-specific industry code~\cite{edk2}. It also implements two fully-featured virtual QEMU~\cite{qemu} platforms, \gls{OVMF} for \gls{Intel} architectures, and \gls{ArmVirtQemu} for \gls{Arm} architectures.
+
+\section{A Secure PE Loader based on Formal Methods}
+
+The current \gls{EDK2} \glsxtrshort{PE} \gls{image-file-loader} implementation has been subject to various security and reliability issues over the years~\cite{secure-pe}. Many issues are implementation details that could be fixed evolutionarily, but even the \gls{API} itself is error-prone and unsafe. In response, we proposed a novel implementation with a new \gls{API} that was designed with the help of formal methods. The most critical correctness properties were formally proven using a Frama-C deviate, however late workarounds to support malformed \glsxtrshort{PE} files were not verified. Since its proposal, \gls{AUDK} has fully replaced the old \gls{image-file-loading} with this novel implementation and multiple parties voiced interest in improving the security of this particular stack.
+
+\section{Image File Format Conversion}
+\label{sec:img_conv}
+
+Compiler toolchains generally do not support all \gls{image-file} formats available. Also, they are often limited in platform availability. For example, the \glsxtrshort{Apple} Xcode toolchain supports only \glsxtrshort{MACHO} files and is only available for \glsxtrshort{Apple} macOS, while \gls{MSVC} supports only \glsxtrshort{PECOFF} files and is only available on Windows. As such, it is not trivial to generate \glsxtrshort{PE} files on some platforms with their default compiler toolchains. To still support cross-platform and cross-format build environments, several tools to convert between \gls{image-file} formats have been developed.
+
+\subsection{ELF to PE: EDK II GenFw and iPXE elf2efi}
+\label{sec:genfw}
+
+For compiler toolchain configurations based on \gls{GCC} and sometimes Clang, \gls{EDK2} emits \glsxtrshort{ELF} files natively. To convert such to \glsxtrshort{PE} files, the TianoCore tool GenFw is utilized~\cite{edk2}. It converts \glsxtrshort{ELF} \glspl{image-file-section} to \glsxtrshort{PE} \glspl{image-file-section} while ignoring \glsxtrshort{ELF} \glspl{image-segment} entirely. This is due to the great flexibility offered by \glsxtrshort{ELF} \glspl{image-file-section} by using custom \gls{static-linking} scripts to merge \glsxtrshort{ELF} \glspl{image-file-section} as desired. It does not necessarily perform a strict translation but supports changing the relative offset between \glspl{image-segment} to change the overall\gls{image} \gls{data-alignment} requirement. GenFw also supports other operations, such as extracting \gls{ACPI} tables from \glspl{image-file}. An undocumented detail of the \gls{EDK2} build system is that all \glspl{image-file} are generated as \gls{XIP}, no matter their phase or purpose.
+
+iPXE follows a similar approach using its separate elf2efi tool~\cite{ipxe}. In contrast to GenFw, its sole feature is a best-effort conversion of \glsxtrshort{ELF} to \gls{UEFI} \glsxtrshort{PE} \glspl{image-file} without adjustments.
+
+\subsection{Mach-O to PE: Apple mtoc and Acidanthera ocmtoc}
+
+For Xcode-based compiler toolchains, \gls{EDK2} emits \glsxtrshort{MACHO} files natively. These are converted to \glsxtrshort{PE} files using the \glsxtrshort{Apple} tool mtoc, which is part of the \glsxtrshort{Apple} compiler toolset cctools~\cite{apple-cctools}. In contrast to TianoCore GenFw with \glsxtrshort{ELF}, mtoc bases the \glsxtrshort{PE} \glspl{image-file-section} on \glsxtrshort{MACHO} \glspl{image-segment}.
+
+Unfortunately, mtoc has been subject to various bugs that remained unfixed for years~\cite{ocmtoc}. Recently, \glsxtrshort{Apple} released a version of the parent tool collection cctools that no longer contains mtoc. To the best of our knowledge, it has been deprecated, at least for public use.
+
+In response, ocmtoc emerged as a community fork~\cite{ocmtoc}. It also fixed all known issues to date, including the generation of read-write-execute \glspl{image-segment} and malformed debug directories. By default, \glsxtrshort{MACHO} files generated by Xcode do not apply strict read-only \glspl{memory-permission} to immutable data, but merge them into the executable \texttt{\_\_TEXT} \gls{image-segment}~(see Section~\ref{sec:merge_ro_x}). In coordination with \gls{AUDK}, ocmtoc implemented support for a strictly read-only \gls{image-segment} by moving the corresponding \glspl{image-file-section} to a new \texttt{\_\_DATA\_CONST} \gls{image-segment}~\cite{audk,ocmtoc}. \glsxtrshort{Apple} took a similar approach for the XNU kernel~\cite{xnu}.
+
+\section{Improving and Testing for Memory Safety}
+
+% FIXME:
+
+The frequency of memory safety violations and exploitation led to various research efforts on reducing both their frequency and their impact. The class of dynamic memory safety violations is often addressed with automatic memory management. This way, freeing memory is usually either handled by \gls{reference-counting} or \gls{garbage-collection}.
+
+\subsection{Fuzz Testing}
+
+\gls{fuzz-testing} is a technique to stress-test a fuzz target with randomly generated inputs. A typical goal is to observe safety violations based on a broad spectrum of inputs. In the context of memory-unsafe language like \gls{C}, this is particularly interesting for discovering memory safety violations~(see Section~\ref{sec:mem_violations}). However, it is also possible to use it for functionality validation if there is a way to decide~(with great confidence) whether the output is correct.
+
+As most randomly-generated inputs are invalid and thus will likely be rejected quickly, fuzzers evolved to generate inputs in smart ways~\cite{fuzzingbook2023}. One of them is mutation-based fuzzing, which lets you provide a corpus of valid inputs, which the fuzzer will mutate. This is commonly combined with coverage guidance, preferring mutations that increase some code coverage metric. A proven mutation-based and coverage-guided fuzzer is LLVM libFuzzer, which tightly integrates with the Clang compiler~\cite{libfuzzer}. For coverage guidance, it uses SanitizerCoverage~\cite{sanitizer-cov}.
+
+Beyond arbitrary mutations, sophisticated techniques like grammar fuzzing surfaced~\cite{fuzzingbook2023}. It allows defining a grammar for inputs to generate valid or otherwise interesting inputs with a much higher probability. Of course, it can still be used to generate invalid inputs. With probabilistic grammar fuzzing, the probability of getting different kinds of input can be influenced.
+
+Finally, especially relevant for mutation-based fuzzing, there are new approaches to combine it with symbolic execution to seed the corpus~\cite{10.1145/3183440.3183494,9394032}.
+
+\subsection{Code Sanitizers}
+
+Code sanitizers consist of compiler instrumentation and sometimes shared libraries that can embed various checks to detect erroneous or suspicious behaviour. Two prominent examples are LLVM AddressSanitizer~(ASan) and UndefinedBehaviorSanitizer~(UBSan)~\cite{asan,ubsan}. The former can detect memory exploits and misaligned memory accesses, among other things. The latter detects undefined behaviour in the sense of \glsxtrshort{C}. Both can be combined with \gls{fuzz-testing} to perform basic empirical code safety testing. However, while this is a good way to increase confidence in the implementation, testing can never provide definitive guarantees. For memory-unsafe languages, the only way to derive them is through formal methods, which we will discuss next.
+
+\subsection{Formal Verification}
+
+Formal verification is a field of techniques for rigorously reasoning about the correctness of algorithms using mathematical methods. The most prominent tools in this area are proof assistants, such as Isabelle/HOL~\cite{isabelle} or Coq~\cite{coq}. While the former relies on classical logic, the latter is limited to intuitionistic logic, at least out of the box. Intuitionistic logic is the basis of the Curry-Howard Correspondence, which defines the isomorphisms commonly known as proofs-as-programs and propositions-as-types~\cite{sorensen2006lectures}. This allows programs to be generated from constructive mathematical proofs. One such product is the optimizing \glsxtrshort{C} compiler CompCert, which has been formally verified using Coq~\cite{compcert}.
+
+However, for various reasons such as code optimizations, tools have emerged to verify software written in traditional programming languages. One such tool is Frama-C~\cite{frama-c}, which is used in safety-critical industries, such as in aviation by Airbus~\cite{cuoq:hal-02263407}. It allows the verification of \gls{C} programs for safety properties, such as memory safety, but also for functional properties, which can be provided as formal specifications using \gls{ACSL}~\cite{acsl}.
+
+Formal methods are the only way to guarantee properties such as memory safety for languages without memory safety semantics. However, they are only used in safety- and security-critical scenarios because of their steep learning curve and the enormous effort~(and thus cost) of formalizing and verifying the entire codebase. Sometimes verification covers only a critical subset of a software product. For Coq, the so-called kernel acts as a trusted core~\cite{coq}. It is the only point of failure for the proof assistant. All tactics rely on the kernel to check their output, which are terms in a common proof language. If a tactic produces incorrect output, it may produce false negatives, but never false positives.
+
+\section{The Rust Programming Language}
+
+Rust aims to be a low-level programming language with strong semantic guarantees by the compiler. Its most interesting design detail is the ownership and borrowing model for memory allocation. It covers both call stack memory allocations and dynamic memory allocations and statically proves all accesses memory-safe, ruling out all classes of memory safety violations. However, this model is limited and some memory-safe code cannot be expressed with it, such as doubly-linked lists. To still support such use cases, Rust supports unsafe code that provides no more guarantees than other languages like C.
+
+Another related safety feature is the detection if integer overflows, which can sometimes be abused to cause buffer overflows, or, more generally, out-of-bounds accesses.
+
+\subsection{The Borrow Checker and Memory Safety}
+
+Rust uses variable bindings, identified by a variable name, to reference allocated memory. If the binding goes out of scope, the corresponding memory is automatically freed, much like automatic variables work in C. However, in contrast to C, the safety of this automatic memory management is is statically proven. This obviously requires that the binding is authoritative of the memory's lifetime, i.e. the binding owns the memory. To allow other code locations to still access the data, but not in a way that induce race conditions or dangling references, Rust introduced the concept of borrowing.
+
+Borrowing may create both immutable and immutable references to memory. Code can either create arbitrarily many immutable or exactly one mutable reference. This works analogous to a readers-writer lock and yields the same guarantees. Not only explicit reference creation leverages their advantages, but iterators also provide only immutable references, which prevents iterator invalidation. As references semantically cannot outlive their resource, use-after-free is fully mitigated.
+
+\subsection{Rust in the Linux Kernel}
+
+\subsection{Rust in EDK II}
+
+\chapter{Requirements for a UEFI Executable File Format}
+\label{chap:uefi_exec_reqs}
+
+\section{Memory Security}
+
+In response to the exploitation of memory safety violations, \gls{CPU} architectures, operating systems, and \gls{firmware} implementations have developed a variety of security approaches~\cite{10.1007/978-3-642-33338-5_5}. These do not address or fix the vulnerabilities themselves but aim to dramatically reduce their impact and the practicality of exploitation. We will now look at some of the more common techniques.
+
+\subsection{Memory Privileges}
+\label{sec:mem_privileges}
+
+\Gls{virtual-memory} also allows the maintenance and isolation of multiple \glspl{address-space}. This is particularly useful for isolating \gls{user-space} processes and restricting access to the \gls{kernel-space} \gls{address-space} via \gls{memory-privilege}. In general, there is one \gls{page-table} per \gls{user-space} process, which is shared with the \gls{kernel-space}. So, the \gls{kernel-space} memory is part of the \gls{user-space} \gls{address-space}, but not accessible to the corresponding \gls{user-space} process due to \glspl{memory-privilege} isolation. However, for \gls{side-channel}-related security reasons~\cite{meltdown,kaiser}, some operating system configurations separate the \glspl{page-table} for \gls{kernel-space} and \gls{user-space} to map only the \gls{kernel-space} memory required to bootstrap any \gls{syscall}. In the Linux kernel, this is implemented by a feature called \gls{PTI}~\cite{pti}. To strengthen the isolation in the other direction, \glsxtrshort{Intel} introduced \gls{SMEP} and \gls{SMAP}, which restrict the execution of and memory accesses to \gls{user-space} memory from \gls{kernel-space} unless explicitly requested~\cite{ia32}.
+
+To address the performance penalty of the \gls{PTI} approach and to simplify the implementation, \glsxtrshort{Intel} introduced \gls{LASS}~\cite{ia32-ext}. Unlike existing related solutions such as \gls{SMEP}, \gls{SMAP}, and \gls{PTI}, \gls{LASS} does not rely on \gls{page-table} information and therefore can be used without a \gls{page-table} walk. This is a new approach to mitigating timing-based \gls{side-channel} attacks since whether the address belongs to the \gls{kernel-space} and thus must not be dereferenced can trivially be decided in constant time.
+
+\subsection{Memory Permissions}
+\label{sec:mem_perms}
+
+\Gls{virtual-memory} management includes not only \gls{address-space} mappings and \glspl{memory-privilege}, but also \glspl{memory-permission}. While \gls{memory-privilege} defines which \glsxtrshort{CPU} mode can perform operations in general, \glspl{memory-permission} define which operations can be performed. The typical operations that can be restricted by \glspl{memory-permission} are reading, writing, and executing memory. Most processors have restrictions on possible combinations~\cite{ia32}. However, historically unconventional \gls{memory-permission} combinations such as execute-only are supported by some.
+
+For security reasons, \glspl{memory-permission} should generally be configured as tightly as possible. In particular, a non-executable \gls{call-stack} is one of the basic defences against \gls{call-stack-smashing}~(see Section~\ref{sec:mem_exploits}). However, it is important to note that \gls{page-table} changes can lead to performance degradation for many reasons, such as the need to flush \gls{TLB} caches. Also, \glspl{memory-permission} can only be applied on the level of \glspl{memory-page}, so tightening \glspl{memory-permission} may increase the overall memory requirements. Therefore, deciding the best configuration for each use case requires careful analysis.
+
+\subsection{Mutual Exclusion of Writing and Executing (W\^{}X)}
+\label{sec:mem_wxorx}
+
+\Gls{w-xor-x} is a paradigm in memory security that memory should never be writable and executable at the same time. This prevents so-called self-modifying code, which can be used to exploit vulnerable applications~(often privileged) and bypass security measures such as \glspl{digital-signature} by modifying the code only after it has been authenticated~(see Section~\ref{sec:mem_exploits}). It also implies a non-executable \gls{call-stack}, as it is writable by nature.
+
+However, there are also legitimate use cases for \glspl{memory-page} that are both writable and executable, such as \gls{JIT}. In response, there have been novel approaches to introducing \gls{w-xor-x} into \gls{JIT} workloads. For example, \glsxtrshort{Apple} silicon provides efficient and thread-specific toggling between being writable and being executable, rather than having to modify the \gls{page-table}~\cite{as-sec}. This avoids some of the penalties associated with typical \gls{memory-permission} changes.
+
+\subsection{Control Flow Security}
+
+Another attempt to mitigate \glspl{call-stack-overflow} is the use of \glspl{call-stack-canary}~\cite{10.1007/978-3-642-33338-5_5}. Typically, on entering the subroutine, it generates a pseudo-random value and stores it near the \gls{return-address} on the current \gls{call-stack-frame}. Before returning, the subroutine compares the \gls{call-stack-canary} with the original value from a safe location, usually a processor register, to see if it has changed. If the values do not match, a \gls{call-stack-overflow} has occurred and the program terminates to prevent exploitation. However, an obvious shortcoming of this approach is that it does not catch indirect \gls{call-stack} corruptions that leave the \gls{call-stack-canary} intact.
+
+To address these shortcomings, sophisticated \gls{FCFI} and \glspl{shadow-call-stack} have been implemented by \glspl{CPU}~\cite{ia32,arm-isa}, operating systems~\cite{linux-arm-bti}, and \gls{UEFI} firmware implementations~\cite{uefi-spec,edk2}. \Gls{FCFI} is implemented in hardware and, when enabled, the compiler marks all jump targets with a special instruction. If the \glsxtrshort{CPU} has \gls{FCFI} enabled, e.g. \gls{BTI}~\cite{arm-isa} or \gls{IBT}~\cite{ia32}, and a jump to an address without such an instruction occurs, the \glsxtrshort{CPU} throws an exception and the operating system may terminate the offending program. This severely limits the candidate pool for \glspl{code-gadget}.
+
+\Glspl{shadow-call-stack} can be implemented either in software, e.g. Clang ShadowCallStack~\cite{clang-csc}, or in hardware, e.g. \glsxtrshort{Intel} \gls{CET}~\cite{ia32}. Their purpose is to keep track of the history of the \glspl{return-address} in a safe place so that the value in the \gls{call-stack-frame} can be verified as authentic. Unlike \glspl{call-stack-canary}, this also detects indirect \gls{call-stack} corruption.
+
+\subsection{Address Space Layout Randomization}
+\label{sec:aslr}
+
+Another technique to make \glspl{code-gadget} harder to find is to randomize their locations~\cite{10.1007/978-3-642-33338-5_5,ms-aslr}. \Gls{ASLR} pseudo-randomizes the \glspl{image-base-address} of all \glspl{shared-library}~(called \gls{PIC}) and \glspl{executable-file}~(called \glspl{PIE}), the \gls{heap-memory}, and the \gls{call-stack} memory addresses. Unlike Windows~\cite{ms-dll-base-addr}, Linux and macOS even pseudo-randomize the \gls{image-base-address} of \glspl{shared-library} per process rather than globally.
+
+As attacks against \gls{ASLR} have surfaced, additional hardening, such as Function Granular \gls{KASLR} that even randomizes function addresses within an \gls{image}, was deployed~\cite{fgkaslr}.
+
+\subsection{Takeaways from Memory Safety and Memory Security}
+
+Memory exploits are not explicitly within the scope of this work. We will discuss \gls{ASLR} and \gls{FCFI} in the context of \gls{UEFI} and \gls{image-file} next, but our contribution cannot help harden memory security. The key takeaway from exploring the field of memory security is that, while it is crucial to provide defence-in-depth against potentially stealthy and critical software exploits, it cannot give us sufficient guarantees, no matter how sophisticated it becomes. On the other hand, if we managed to guarantee memory safety, most techniques that harden memory exploits would not be required. As parsing \glspl{executable-file} requires handling a lot of potentially malicious data, with the ultimate goal to execute it, memory safety is of utmost importance. Still, memory security should be employed or at least not explicitly hindered where possible.
+
+\subsection{Memory Security in Image File Formats and UEFI}
+
+\section{The Unified Extensible Firmware Interface}
+
+Modern computer platforms require complex initialization to function as expected. This may include tasks like updating the \glsxtrshort{CPU} \gls{microcode}, initializing the main memory, or booting the operating system. In the past, mostly proprietary and closed \gls{firmware} implementations handled these, such as the \gls{BIOS} for \glsxtrshort{Intel} architecture \glspl{CPU}~\cite{bios-spec}. With growing complexity and requirements of interoperability, the industry shifted to a new modular and extensible alternative, known as the \gls{UEFIg}~\cite{uefi-spec}. It has since become the supported boot specification for the \glsxtrshort{Microsoft} Windows operating system~\cite{win10-hwreq}. Also, companies like \glsxtrshort{Qualcomm} utilize it for various mobile device platforms, such as \gls{SoC} products used in Android phones and tablets~\cite{qc-uefi}.
+
+Most \gls{UEFI} implementations implement both the \gls{UEFI}~\cite{uefi-spec} and the \gls{UEFI-PI}~\cite{pi-spec} specifications. While the former deals with external compatibilities, such as providing services and specifications for applications and \glspl{os-loader}, the latter deals with internal compatibilities, such as providing services useful for hardware initialization. Both are owned and published by the \gls{UEFI} Forum.
+
+The \gls{UEFI} specifications designate the \glsxtrshort{PE} format for \gls{UEFI} and \gls{UEFI-PI} drivers, as well as \gls{UEFI} applications and \glspl{os-loader}.
+
+\subsection{UEFI PI Phases of Execution}
+
+The \gls{UEFI-PI} specification describes multiple phases of execution~(see Figure~\ref{fig:uefi_phases}). This design follows the multiphase process of hardware initialization employed by various kinds of platforms.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics{Figures/UEFIPIPhases.pdf}
+  \caption{UEFI PI Phases of Execution.}
+  \label{fig:uefi_phases}
+\end{figure}
+
+\subsubsection{Security (SEC)}
+
+The \gls{SEC} phase is the first phase to be invoked, for example by power events like starting or rebooting the device. In general, its purpose is to prepare the environment for executing generic \glsxtrshort{C} code. This may include updating the \glsxtrshort{CPU} \gls{microcode} or verifying the \glsxtrshort{CPU} health state. The most important task however is to set up a temporary memory that can serve as a \gls{call-stack}. Traditionally, this is done via a technique called \gls{CAR}. \glsxtrshort{Intel} platforms implement this with the so-called \gls{NEM}, which disables cache line eviction on cache misses, guaranteeing the persistence of stored data. Due to its nature as the first software invoked, it serves as the \gls{SRoT}. Once it completed all initialization tasks, \gls{SEC} invokes the \glsxtrshort{PEI} phase.
+
+\subsubsection{Pre-EFI Initialization (PEI)}
+
+The \gls{PEI} phase is the second phase to be invoked, generally right after the \gls{SEC} phase. In the past, its sole purpose was to initialize the permanent main memory in a simplified environment. However, with the introduction of features like platform recovery~(e.g. in case a \gls{firmware} update fails), this is not strictly true with the current generation of \gls{UEFI-PI} implementations. Some modern platforms like the \glsxtrshort{AMD} Ryzen family of \glspl{CPU} no longer perform initialization of the main memory as part of the platform firmware and instead have moved it to less open hardware, such as the \glsxtrshort{AMD} \gls{PSP}.
+
+When resuming from platform sleep, \gls{PEI} executes so-called S3 boot scripts to restore the platform state discarded by the platform sleep state invocation. These S3 boot scripts can be modified from \gls{PEI} or subsequent phases to preserve their platform initialization operations. As such, \gls{UEFI-PI} skips subsequent phases when resuming from platform sleep.
+
+\subsubsection{Driver Execution Environment (DXE)}
+
+The \gls{DXE} phase is the third phase to be invoked. However, it may be skipped with certain platform boot paths like resuming from platform sleep. Its primary purpose is to initialize the remaining hardware which was not yet initialized by the \gls{PEI} phase and to establish platform security. Initialization tasks may cover the platform chipset, PCIe devices, storage interfaces, and such. \gls{DXE} strengthens platform security by locking down \gls{MM}~(e.g. no new \gls{MM} communication buffers can be allocated after its end) and optionally write-protecting the firmware storage.
+
+\subsubsection{Boot Device Search (BDS)}
+
+The \gls{BDS} phase is the fourth phase to be invoked, generally right after \gls{DXE}. It may not be reached if resetting the platform early for some reason~(e.g. when applying a \gls{firmware} update). Its primary purpose is to locate and hand over control to bootable code, e.g. an \gls{os-loader}.
+
+However, because many machines require some level of customizability, it may also invoke in-built applications like a configuration utility or a selection application for multiple operating systems, based on user interaction. To allow for this, various peripheral devices like mice, keyboards, graphic outputs, and such~(commonly referred to as \glspl{HID}) need to be initialized. This is handled by the \gls{UEFI-Boot-Manager}, which is the abstract concept of \gls{BDS} outside \gls{UEFI-PI}. The \gls{UEFI-Driver-Model} allows drivers to probe devices and attach to them if they are supported. User input like keyboard hotkeys can then trigger different actions, such as invoking the boot selection or rebooting the platform.
+
+\subsubsection{Transient System Load (TSL), Runtime (RT), and Afterlife (AL)}
+
+The \gls{TSL} phase is more of a transition. It starts with invoking the \gls{os-loader} and ends when the operating system finished transitioning \gls{UEFI} into the \gls{RT} phase, by providing \gls{kernel-space} address mappings for the \gls{UEFI} \glsxtrshort{RT} data. In contrast to the other phases, \gls{RT} does not control the system itself and rather is an aid to the operating system, which can invoke so-called \gls{UEFI} Runtime Services on demand. The idea is to abstract hardware-dependent functionality with \glsxtrshort{C} code that can be called in the \gls{kernel-space} context. The \gls{AL} phase also is not strictly a phase, but the process of shutting down the platform.
+
+\subsubsection{Traditional and Standalone Management Mode (MM)}
+
+The \gls{MM} phase is not strictly a phase like the others, but once it is set up, it is entered on demand. It may either be set up during the \gls{DXE} phase and access all services and protocols it provides, known as \gls{TMM}. Or, it may be set up during the \gls{PEI} phase and not access any outside services on its own, known as \gls{StMM}. Originating from the \glsxtrshort{Intel} System Management Mode, its primary task used to be handling power management functions during the operating system runtime. However, this functionality has been moved to the \glsxtrshort{CPU} itself with modern \glsxtrshort{Intel} and \glsxtrshort{AMD} chips. \gls{MM} remained as a high-privilege mode used for security isolation. For example, before loading third-party code, modern \glsxtrshort{Intel} and \glsxtrshort{AMD} platforms commonly restrict write operations to the firmware \gls{SPI} to \gls{MM}, for security reasons. To still be able to write \gls{NVRAM} variables during runtime, a \gls{RT} driver sends the request to a \gls{MM} driver, which then writes the variable if allowed.
+
+% TODO: backward compatibility
+% OEMs use SMM for arbitrary code execution from the OS-context using ACPI ?
+
+\subsection{Module Dispatchers and the Image File Loader}
+
+UEFI module dispatchers handle the scheduling of modules in a correct order. They process \glspl{FVg} and repeatedly start all modules that have all their dependencies met. Dependencies, which can be PPIs or protocols, are described by the Depex section for UEFI PI PEIMs and DXE drivers. As PPIs and protocols can be installed at any point in time, the load order of the modules can only be determined at runtime. To load and start said modules, the module dispatchers utilize a TE and PE image loader. Strictly speaking, the dispatchers themselves only process files from the firmware storage which, if the \glspl{FVg} are all digitally signed, are authentic. However, the BDS phase may load UEFI drivers, applications, and OS loaders from untrusted storage, which passes through the very same infrastructure. These images are not subject to the same intrinsic trust and must be processed with great care to not open exploitable behaviour to attackers.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics{Figures/UefiLoader.pdf}
+  \caption{Role of the Image File Loader in UEFI and UEFI PI.}
+\end{figure}
+
+\subsection{Roots of Trust and Chains of Trust}
+
+\Glspl{chain-of-trust} are the foundation of authority-based security designs. They start with an axiomatically trusted entity, the \gls{RoTg}, which could be a product owner, for example. In user-space software designs, this can be implemented with a \gls{root-digital-certificate} known to belong to the product owner, while in hardware designs it is typically a security chip that the product owner may have developed or validated. From there, the \gls{RoTg} authenticates the next entity in the chain. Continuing with the hardware \gls{chain-of-trust}, this could be its own \gls{firmware}. Further down the line, there are multiple layers of components that may span across multiple supply chains and involve multiple product vendors. For example, the security chip \gls{firmware} may authenticate a more general platform \gls{firmware}, and the platform \gls{firmware} may load a hardware driver provided by a third party. When the platform \gls{firmware} authenticates this driver, it is represented as another link in the \gls{chain-of-trust}. The general idea is that trust is transitive, so if the platform \gls{firmware} trusts the driver, and the \gls{RoTg} trusts the platform \gls{firmware}, then the platform trusts the driver.
+
+However, trust is not necessarily a binary property. For example, an entity may only be trusted only with certain platform resources and privileges. Transitive trust must never extend the scope of trust. For example, \glspl{CAg} can never sign \glspl{digital-certificate} or data outside their scope. By limiting their privileges, the impact of abuse and exploitation is limited, which is why links towards the root are privileged and well protected (e.g. protected by \glspl{HSM} and physical security), while links towards the leaf are a lot more limited but accessible.
+
+To reduce the risk of unnoticed exploitation, \glspl{digital-certificate} have a limited validity timeframe and must be renewed before expiring. Leaf \glspl{digital-certificate} are usually only valid for a few months or around a year, while a \gls{root-digital-certificate} may be valid for multiple decades. The higher the chain a link is, the harder it is to renew. In the event of a theoretical security vulnerability or exploitation, one can revoke trust in any link in the chain. This also is not necessarily binary --- optionally, with a timestamp of revocation, data signed prior to revocation can still be trusted.
+
+Besides a plain \gls{chain-of-trust}, \glspl{digital-signature} and trusted timestamps can be used to implement more sophisticated security features. For example, with personalized (in the sense of the target computer) and on-demand signing (which enables the use of nonces for an interactive update process), soft downgrade protections can be implemented. With a naive approach, after a configurable amount of time, the update server simply stops signing old updates and their \glspl{digital-signature} expire. \glsxtrshort{Apple} implements a more sophisticated approach that roughly follows the same ideas~\cite{apple-sec}.
+
+Examples of hardware \glspl{RoTg} are \gls{Intel-ME} and \glsxtrshort{Apple} T2. Next, we will discuss how \gls{verified-boot} uses them to authenticate the entire platform \gls{firmware} using a \gls{chain-of-trust}.
+
+\subsection{Verified Boot and Intel Boot Guard}
+
+\Gls{verified-boot} applies establishes a \gls{chain-of-trust} for the platform \gls{firmware} to authenticate the entire boot process. \Glsxtrshort{Intel} Boot Guard is one of the technologies that make this possible~(see Figure~\ref{fig:boot-guard}). With it, \gls{Intel-ME} acts as a \gls{HRoT}, which verifies the \gls{IBB} of the platform \gls{firmware}. As the \gls{reset-vector} resides on secondary \gls{SPI} memory and \glsxtrshort{Intel} platforms still require a lot of code to initialize the main memory, the said \gls{IBB} generally covers all pre-memory \glspl{FVg}. To mitigate \gls{TOC-TOU} attacks when shadowing the post-memory \glspl{FVg} into the main memory, they are covered by a separate \gls{OBB}, which in practice is more of a logical collection of \glspl{FVg}. The \gls{firmware} exposes authenticated \glspl{cryptographic-hash} for them, which allows their authentication in software by \gls{PEI} after they have been shadowed~(\gls{EDK2} \textit{FvReportPei}). Due to the generally low speed of \gls{SPI} memory, authenticating after shadowing improves the boot performance.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics{Figures/BGRoT.pdf}
+  \caption{Verified Boot based on SEC or Intel Boot Guard.}
+  \label{fig:boot-guard}
+  \caption*{\Gls{Intel-Boot-Guard} uses \gls{Intel-ME} as the \gls{HRoT} for platform \gls{firmware} authentication. It authenticates the \gls{IBB}, which contains all the code required to run before initializing the system memory. The \gls{IBB} is then responsible for authenticating the \gls{OBB} once it has been shadowed into system memory. If important data resides outside both blocks or if anything from the \gls{OBB} is authenticated before shadowing, the scheme may not be secure.}
+\end{figure}
+
+\Glsxtrshort{Apple} moved the entire firmware image and authentication logic to their \gls{HRoT} \glsxtrshort{Apple} T2~(see Figure~\ref{fig:t2_boot}). This will mitigate all the issues discussed above.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics{Figures/T2RoT.pdf}
+  \caption{Verified Boot based on Apple T2.}
+  \label{fig:t2_boot}
+  \caption*{Similar to Figure~\ref{fig:boot-guard}. However, unlike \gls{Intel-ME}, \glsxtrshort{Apple} T2 authenticates the entire \gls{firmware} image as a whole before powering on the main processor. This means that there can be no data that is not authenticated. Since the \gls{HRoT} itself carries the \gls{firmware} image, there can be no \gls{TOC-TOU} attacks related to shadowing to system memory.}
+\end{figure}
+
+\subsection{Secure Boot and Measured Boot}
+\label{sec:sb_mb}
+
+The \gls{UEFI} specification has not only advanced the operating system boot process and the maintainability of \gls{firmware} implementations, but it also introduced several new security features.
+
+One of them is \gls{secure-boot}, an umbrella term for a software stack in \gls{UEFI} \gls{firmware} implementations to cryptographically authenticate \glspl{image-file} using \glspl{digital-signature}. In the consumer market, this means that devices are generally shipping with the `\glsxtrshort{Microsoft} Windows Production \glsxtrshort{CA} 2011' certification authority pre-installed~\cite{ms-sbkey}. \glsxtrshort{Microsoft} also provides the `\glsxtrshort{Microsoft} 3rd Party \glsxtrshort{UEFI} \glsxtrshort{CA}' certificate authority to third parties to centralize the \gls{secure-boot} management, e.g. for the Linux operating systems landscape~\cite{ms-sbkey3rd}. The operating systems by \glsxtrshort{Microsoft} and \glsxtrshort{Apple} expand code authentication into the \gls{user-space}. While Windows only authenticates \glspl{executable-file} and \glspl{shared-library}, those by \glsxtrshort{Apple} generally authenticate the entire system image~\cite{apple-sec}. Recently, a flexible framework to authenticate~(a subset of) the system image independent from the operating system has been showcased~\cite{amaranth}. Most operating systems based on Linux do not have any load-time authentication at all, but the kernel supports dm-verity and fs-verity, which are leveraged by Android and ChromeOS~\cite{linux}.
+
+Another security feature specified by the \gls{UEFI} specification is \gls{measured-boot}, a currently enterprise-oriented scheme to collect critical information about the boot environment and send it to a remote attestation entity, usually a server. This information may include hardware and \gls{firmware} configuration or loaded drivers, depending on the platform policy.
+
+\subsection{Human Interface Infrastructure (HII)}
+
+\gls{UEFI} drivers and applications may expose and consume \gls{UEFI-HII} concepts. They are the foundation of user input and output in \gls{UEFI}, such as fonts, localization, and graphical interfaces as a whole. The \gls{UEFI-HII} database aggregates resources from so-called \gls{UEFI-HII} packages. Conventionally, the \glsxtrshort{PE} resource directory carries a \gls{UEFI-HII} package list that encodes these. It is then located by the \gls{module-dispatcher} at load-time and installed as an \gls{UEFI} protocol on the module's \gls{UEFI} handle~\cite{uefi-spec}. \gls{EDK2} however also supports exposing \gls{UEFI-HII} package data to the module via \glsxtrshort{C} variables, depending on the \lstinline{UEFI_HII_RESOURCE_SECTION} build option~\cite{edk2-module-writers,edk2}.
+
+Outside of modules consuming their own \gls{UEFI-HII} packages, the \gls{EDK2} Shell utilizes the separate \glsxtrshort{PE} resource section to extract help strings. This requires the \glsxtrshort{PE} file to be fully loaded, including setting up permissions to execute. Alternatively, the \gls{EDK2} Shell supports bundled help strings and manual files~\cite{edk2}. The overcomplicated parsing logic of the \glsxtrshort{PE} resource directory has been subject to functional defects~\cite{secure-pe}.
+
+\section{UEFI Requirements for Executable Files}
+
+\subsection{Execute-in-Place, Preloading, and Shadowing}
+\label{sec:peim_reqs}
+
+Some platforms do not have any main memory available upon platform reset and instead repurpose dramatically smaller cache memory in order to support things like \gls{call-stack} memory, as required for the execution of \glsxtrshort{C} code~\cite{ISO:2018:III}. \Gls{firmware} developers generally call this \gls{CAR}. As said cache memory is sparse, \glsxtrshort{Intel} platforms running \gls{UEFI} \gls{firmware} implementations utilize a technique called \gls{XIP}, which lets the \glsxtrshort{CPU} fetch and execute instructions directly from the \gls{firmware} storage~(generally connected via \gls{SPI}). For this, the \glsxtrshort{CPU} maps the \gls{firmware} storage at an address known at build-time. To prevent accidental modification of the \gls{firmware} storage, the \gls{MMIO} mapping is read-only. Thus, \gls{XIP} \glspl{image} cannot write to global variables.
+
+The build tools store \gls{XIP} \glspl{image} `preloaded' so that they can be executed without loading or relocating at run-time. \Gls{image-preloading} in this context refers to performing \gls{image-file-loading} and \gls{image-relocation} to the predetermined \gls{image-base-address} at build-time. This especially implies that the \gls{firmware} storage must hold the entire \gls{image} \gls{address-space} without compression techniques, such as omitting trailing zero values of \glspl{image-segment} as done in \glspl{image-file}.
+
+When main memory has been initialized and is available, important \glspl{PEIM} can be transferred from \gls{CAR} memory to the main memory by a technique called \gls{PEIM-shadowing}. This process copies the entire \gls{image} \gls{address-space} from the old to the new memory location and performs \gls{image-relocation}. As the same applies to \gls{call-stack} and \gls{heap-memory}, the \gls{PEI} services provide a procedure for pointer conversion every \gls{PEIM} must call on all pointers to such memory.
+
+\subsection{Runtime Image Relocation}
+
+\Gls{runtime-image-relocation}, similar to \gls{PEIM-shadowing}~(see Section~\ref{sec:peim_reqs}), is used for \gls{RT} drivers to support \gls{virtual-memory} mappings decided by the operating system. In macOS, this has the side effect of extending \gls{KASLR} to the \gls{UEFI} runtime memory, as it is mapped adjacent to the operating system kernel \gls{address-space}.
+
+By the time the \gls{firmware} performs \gls{runtime-image-relocation}, likely all \gls{RT} drivers have already been executed. This means that the targets of \glspl{image-relocation-fixup} may have changed, e.g. by changing global variables that were statically initialized with pointers. There are three ways to handle this situation tolerantly:
+\begin{enumerate}
+  \item Apply the \glspl{image-relocation-fixup} as usual. This can cause faults if overwriting global variables that were statically initialized with an in-\gls{image} address with an external address~(see Figure~\ref{fig:native_uefi_rt_reloc}). The \gls{UEFI} specification does not explicitly describe this as the standardized method, but there is no implication that there should be any workaround~\cite{uefi-spec}.
+  \item Apply an \gls{image-relocation-fixup} only if its value is unchanged. This can cause bugs when overwriting global variables that were statically initialized with an in-\gls{image} address with a different in-\gls{image} address and not calling \lstinline|ConvertPointer()|~(see Figure~\ref{fig:real_uefi_rt_reloc}). This is what \gls{EDK2} and real-world \gls{firmware} do~\cite{edk2}.
+  \item Apply an \gls{image-relocation-fixup} only if its value is in the \gls{image} \gls{address-space}. This would work correctly for most cases. However, Clang can emit \gls{image-relocation-fixup} values that are not addresses themselves, but offsets to constants. While we only ever managed to observe this for a single driver~(\gls{EDK2}'s \textit{FatPei}~\cite{edk2}) and only for the IA-32 architecture, this would cause an extremely rare and difficult-to-debug fault. We are not aware of any implementations of this behaviour and have only described it for completeness.
+\end{enumerate}
+
+% TODO: writable relocs
+
+\begin{lstfloat}[ht]
+  \centering
+  \begin{lstlisting}[style=c]
+uint8_t mRuntimeDatum = 0;
+// This emits an image relocation fixup.
+char    *mRuntimePtr  = &mRuntimeDatum;
+
+// Change the address of mRuntimePtr to something
+// outside the current image before runtime
+// relocation.
+void PreRuntimeReloc() {
+  mRuntimePtr = NULL;
+}
+
+// Naive operation performed by the firmware on
+// runtime image relocation.
+// void AtRuntimeReloc(uintptr_t ImageSlide) {
+//   mRuntimePtr += ImageSlide;
+// }
+
+// Process mRuntimePtr after runtime image
+// relocation.
+void PostRuntimeReloc() {
+  if (mRuntimePtr != NULL) {
+    *mRuntimePtr = 0;
+  }
+}
+  \end{lstlisting}
+  \caption{Fault from Naive UEFI Runtime Image Relocation.}
+  \label{fig:native_uefi_rt_reloc}
+  \caption*{Faulting program assuming naive \gls{UEFI} \gls{runtime-image-relocation}. This strictly assumes the \gls{UEFI} specification's description of \lstinline|SetVirtualAddressMap()|~\cite{uefi-spec}. As \lstinline|mRuntimePtr| is initialized with the absolute address of a global variable, an \gls{image-relocation-fixup} is emitted for it~(see Section~\ref{sec:reloc}). Before entering the runtime phase, we set the pointer to \lstinline[style=c]|NULL|. Due to the recorded \gls{image-relocation-fixup} for the previous address, \lstinline[style=c]|NULL| is relocated, and the final value is exactly \lstinline|ImageSlide = NewBase - OldBase|, i.e. a rogue pointer. After the \gls{runtime-image-relocation} has succeeded, we run some code that changes the value of \lstinline|mRuntimePtr| if and only if it is not \lstinline|NULL|, a common way to signal pointer liveness. At this point, we corrupt arbitrary memory, even though the code is semantically correct.}
+\end{lstfloat}
+
+\begin{lstfloat}[ht]
+  \centering
+  \begin{lstlisting}[style=c]
+uint8_t mRuntimeDatum1 = 0;
+uint8_t mRuntimeDatum2 = 0;
+// This emits an image relocation fixup.
+char    *mRuntimePtr   = &mRuntimeDatum1;
+
+// Change the address of mRuntimePtr to something
+// else inside the current image before runtime
+// relocation.
+void PreRuntimeReloc() {
+  mRuntimePtr = &mRuntimeDatum2;
+}
+
+// Real-world operation performed by the firmware
+// on runtime image relocation.
+// void AtRuntimeReloc(
+//   void      *OrigPtr,
+//   uintptr_t ImageSlide
+//   ) {
+//   if (mRuntimePtr == OrigPtr) {
+//     mRuntimePtr += ImageSlide;
+//   }
+// }
+
+// Process mRuntimePtr after runtime image
+// relocation.
+void PostRuntimeReloc() {
+  mRuntimeDatum2 = *mRuntimePtr;
+}
+  \end{lstlisting}
+  \caption{Bug from Real-World UEFI Runtime Image Relocation.}
+  \label{fig:real_uefi_rt_reloc}
+  \caption*{Erroneous program assuming real-world \gls{UEFI} \gls{runtime-image-relocation}. This bug mirrors the fault from Figure~\ref{fig:native_uefi_rt_reloc}. Real-world \gls{UEFI} implementations only relocate values that remain unchanged~\cite{edk2}, which mitigates the previous fault. Before entering the runtime phase, we change \lstinline|mRuntimePtr| to point to \lstinline[style=c]|mRuntimeDatum2|. As its address is different from that of \lstinline[style=c]|mRuntimeDatum1|, the \gls{image-relocation-fixup} is not applied, even though the address is within the \gls{image} \gls{address-space}. After the \gls{runtime-image-relocation} has succeeded, we run some code that should effectively assign \lstinline|mRuntimeDatum2| to itself. However, due to the incorrect address of \lstinline|mRuntimePtr|, we are reading arbitrary memory. One could argue that according to the \gls{UEFI} specification, \lstinline|ConvertPointer()| should have been called on \lstinline|mRuntimePtr|, which resolves the bug~\cite{uefi-spec}. However, the vague wording about reapplying of \glspl{image-relocation-fixup} and the correct behaviour for unmodified pointers make the situation ambiguous.}
+\end{lstfloat}
+
+\subsection{Mixed-Mode Execution}
+\label{sec:mixed-mode}
+
+\Gls{firmware} implementations for 64-bit \glspl{CPU} based on \glsxtrshort{Intel} architecture typically implement mixed-mode execution~\cite{intel-fsp}. The \glsxtrshort{CPU} powers up in $16$-bit mode~\cite{ia32} and \gls{SEC} switches it into $32$-bit mode, which is the main operating mode throughout \gls{PEI}~\cite{edk2}. Only when transitioning into \gls{DXE}, the \glsxtrshort{CPU} finally switches into 64-bit mode. One of the main reasons for mixed-mode execution is the reduced memory requirements of the $32$-bit code~\cite{mixed-mode-1,mixed-mode-2}. While work is underway to move \gls{PEI} completely to 64-bit mode~\cite{mixed-mode-1,mixed-mode-2} and future microarchitecture proposals deprecate $16$-bit and 64-bit modes for low-level operation~\cite{x86s}, mixed-mode execution is a strict requirement for the time being. Most importantly, it means that a single \gls{image-file} can carry code targeting multiple \glspl{ISA}, which is particularly relevant for \gls{image-relocation}.
+
+\subsection{Fixed-Address Loading}
+\label{sec:fixed-addr}
+
+In stark contrast to \gls{ASLR}, some embedded systems designs mandate fixed memory maps. This is a typical consequence of disallowing \gls{dynamic-memory-allocation} (see Section~\ref{sec:heap_mem_alloc}) to establish worst-case guarantees for memory consumption and allocation times. To accomplish this, the build system has to statically allocate memory for all \glspl{image}, among other things, much like the compiler statically allocates memory for global variables. As such, all \glspl{image} can be pre-linked, moving \gls{image-relocation} to the build-time. As a side effect, this saves space, because the \gls{image-relocation} table can be stripped.
+
+\Gls{EDK2} implements this concept opportunistically~\cite{edk2}. \Glspl{image-file} can report they were compiled with fixed-address loading enabled and the \gls{module-dispatcher} will attempt to allocate it at its fixed load address. For this, the \gls{module-dispatcher} reserves a memory region and manages \gls{memory-page} occupation with a bitmap. If there is an allocation collision, the \gls{image-file} is loaded to a different address. \Gls{UEFI} does not support disabling \gls{dynamic-memory-allocation} and some core interfaces require its usage~\cite{pi-spec,uefi-spec}.
+
+Alternatively to traditional fixed-address loading, \gls{EDK2} supports a fixed-offset mode that works the same way but fixes an address relative to a base address chosen by the \gls{firmware}. This is the only mode available to the \gls{MM} phase. With this mode, the \glspl{image-relocation-fixup} cannot be stripped.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\chapter{Something} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Designing a Secure and Space-Efficient Executable File Format} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
+\label{chap:uefi_exec_design}
 
-\blindtext[2]
+\section{Defining a UEFI Image Abstraction}
 
-\section{Else}
+\subsection{Data Structures of UEFI Image Files}
 
-\subsection{And}
-\blindtext[1]
+\begin{itemize}
+  \item \textbf{Image Metadata:}
+  \begin{itemize}
+    \item \textbf{Machine Identifier:} Indicates the host \gls{ISA} supported by the \gls{image-file}.
+    \item \textbf{Type:} Indicates the type of the \gls{image}~(e.g. boot-time driver, runtime driver, or application).
+    \item \textbf{Image Relocation Fixups Stripped:} Whether \glspl{image-relocation-fixup} have been stripped. This is necessary to distinguish whether the \gls{image} does not require \glspl{image-relocation-fixup} or whether they were actively removed when there are none.
+    \item \textbf{Base Address:} The address of the \gls{image} \gls{address-space} from which the loaded \gls{image} can be executed without \gls{image-relocation}.
+    \item \textbf{Entry Point Image Offset:} The offset of the \gls{image-entry-point} within the \gls{image} \gls{address-space}.
+  \end{itemize}
+  \item \textbf{Segment Table:} A table of \glspl{image-segment}:
+  \begin{itemize}
+    \item \textbf{Name:} An arbitrary name that identifies the \gls{image-segment}.
+    \item \textbf{Image Offset:} The offset within the \gls{image} \gls{address-space} to which the \gls{image-file-loader} loads the \gls{image-segment} data.
+    \item \textbf{Image Size:} The size, in \glspl{byte}, of the \gls{image-segment} data within the \gls{image} \gls{address-space}.
+    \item \textbf{File Offset:} The offset within the \gls{image-file} from which the \gls{image-file-loader} loads the \gls{image-segment} data.
+    \item \textbf{File Size:} The size, in \glspl{byte}, of the \gls{image-segment} data within the \gls{image-file}.
+    \item \textbf{Permissions:} The \glspl{memory-permission} that may restrict whether the \gls{image-segment} data within the \gls{image} \gls{address-space} can be read, written, or executed.
+  \end{itemize}
+  \item \textbf{Relocation Table:} A table of \glspl{image-relocation-fixup}:
+  \begin{itemize}
+    \item \textbf{Type:} Indicates the type of \gls{image-relocation-fixup} to apply. This specifies the format of the data read or written at the \gls{image-relocation-fixup} offset.
+    \item \textbf{Image Offset:} The offset within the \gls{image} \gls{address-space} the \gls{image-relocation-fixup} targets.
+  \end{itemize}
+  \item \textbf{Additional Information:}
+  \begin{itemize}
+    \item \textbf{Signature Table:} An embedded table of one or more \glspl{digital-signature} that may cover the \gls{image-file} as a whole or the \glspl{image-segment} individually.
+    \item \textbf{Debug File Path:} The path to the file that contains the \glspl{image-symbol} on the build machine.
+  \end{itemize}
+\end{itemize}
 
-\section{More}
-\blindtext[1]
+\subsection{Operations on UEFI Image Files and Images}
+
+Similarly, common operations on \glspl{image-file} and \gls{image} \glspl{address-space} can be applied.
+
+\begin{itemize}
+  \item \textbf{Hash:} Compute a \gls{cryptographic-hash} for an \gls{image} or \gls{image-file}. For this to be secure, all \glspl{image-segment} data and everything that may alter them, such as the \gls{image-relocation} table, must be covered.
+  \item \textbf{Load:} Setting up the \gls{image} \gls{address-space} from an \gls{image-file}.
+  \item \textbf{Relocate:} Changing all in-\gls{image} absolute references to move the \gls{image} to a new address.
+  \item \textbf{Runtime Relocate:} Same as Relocate, but occurs at runtime, after code potentially executed.
+\end{itemize}
+
+\section{Scope of the UEFI Executable File Format}
+
+Unlike the previously discussed \gls{image-file} formats, the proposed \gls{UE} \gls{executable-file} format design is explicitly limited in functionality and scope.
+
+\begin{enumerate}
+  \item No support for \gls{static-linking}. \gls{UE} files will be generated from files of the \glsxtrshort{ELF}, \glsxtrshort{MACHO}, and \glsxtrshort{PE} formats, which will be supporting \gls{static-linking}. Only the final, well-formed \glspl{image-file} will be converted to \gls{UE}, which hence does not need to support any \gls{static-linking} features.
+  \item No support for \gls{dynamic-linking}. \Gls{image-symbol} resolution is a complex process in modern \gls{image-file} formats and is often implemented with various optimizations to guarantee high performance. \gls{UEFI}, as of now, does not support \glspl{dynamic-linking} of any sort and instead relies on \glspl{uefi-protocol}. % TODO: DEFINE
+  The proposed alternatives are \gls{static-linking} to combine modules, or to utilize pre-linking, i.e. to perform \gls{dynamic-linking} at compile-time, which yields a composite module~(see Section~\ref{sec:compmod}).
+  \item No considerations for \gls{mmap}-based loading. \gls{UE} is strictly designated for boot-time \gls{firmware} usage. \gls{UEFI} has no concept of \gls{virtual-memory} management as yet and its design is far from ready to support such a subsystem. As such, the loading semantics will be strictly based on copying and features like \glsxtrshort{RELRO} are not applicable.
+\end{enumerate}
+
+As such, we propose \gls{UE} strictly as an \gls{executable-file} format. For the \gls{image-file} data structures, this means the following:
+
+\begin{itemize}
+  \item No concept of \glspl{image-file-section}~(see Section~\ref{sec:sections}).
+  \item Only one, centralized \gls{image-relocation} table~(i.e. no concept of \glspl{image-relocation-fixup} per \glspl{image-file-section}).
+  \item No concept of \gls{image-symbol} tables.
+\end{itemize}
+
+\section{Memory Layout, Binary Portability, and Parsing Performance}
+
+\glsxtrshort{C}~\cite{ISO:2018:III} is the foundation for various low-level software, such as operating systems, drivers, and also the entire \gls{UEFI} specification and \gls{firmware} stacks based on \gls{EDK2}. Its heavy reliance on pointers allows for an immediate interpretation of binary data, such as the contents of a binary file, as data structures. This can be utilized to parse such data in place, which allows for avoiding decoding procedures and data copies. As compilers generally emit processor memory access instructions to perform pointer dereference operations, the pointers must meet processor constraints on memory accesses. Due to this, every \glsxtrshort{C} data type has a \gls{data-alignment} requirement, which ensures the datum resides at an address that is a multiple of said \gls{data-alignment} requirement.
+
+\subsection{Natural Data Alignment and Data Structures}
+
+For basic data types, this usually corresponds to their size requirement, known as \gls{natural-data-alignment}. The \gls{UEFI} and \gls{UEFI-PI} specifications declare \gls{natural-data-alignment} requirements for all data types~\cite{pi-spec,uefi-spec}, making it safe to assume. Generally speaking, wide-spread \glsxtrshort{Intel} architecture \glspl{ABI} require at most a \gls{natural-data-alignment} for all basic data types~\cite{agner-x86-cc}. The same holds for the \glsxtrshort{Arm} \glspl{ABI}~\cite{arm32-pcs,arm64-pcs}. Due to the fragmented and volatile nature of \glspl{ISA}, it is infeasible to cover them all, but we were unable to find any counter-example to this. However, note that for some \glspl{ABI}, \gls{data-alignment} requirements do not exceed the target \gls{machine-word} size~\cite{sysVi386,arm32-pcs}. This leads to the following conclusion:
+
+\begin{requirement}
+  When dealing with data that is read or written for parsing, the \gls{data-alignment} requirement of all basic data types must be treated as their \gls{natural-data-alignment} requirement, regardless of \gls{ABI} \gls{data-alignment} requirements.
+\end{requirement}
+
+For aggregate~(structures and arrays) and union types, this usually corresponds to the greatest \gls{data-alignment} requirement among its members. As \gls{data-alignment} requirements are practically always powers of two~(due to the binary nature of processors and because \glsxtrshort{C} requires them to be a power~\cite{ISO:2018:III}), this guarantees meeting the \gls{data-alignment} requirements of all members. Structures may require a special measure called \gls{data-structure-padding}, which means inserting \glspl{byte} of an unspecified value to fill a gap to the next \gls{data-alignment} boundary~\cite{ISO:2018:III}~(see Source Code~\ref{fig:struct_pad}). As \gls{data-alignment} requirements can differ between \glspl{ISA}, as we have seen, obviously not all structures are universally binary-compatible. This leads to the following conclusion:
+
+\begin{requirement}
+  Every structure must be composed such that when \gls{natural-data-alignment} requirements hold for basic data types, no \gls{data-structure-padding} is required.
+\end{requirement}
+
+
+
+\begin{lstfloat}[ht]
+  \centering
+  \begin{lstlisting}[style=c]
+// sizeof = 12, _Alignof = 4
+struct {
+  // offsetof = 0, sizeof = _Alignof = 1
+  uint8_t  a;
+ [// offsetof = 1, sizeof = 3, _Alignof = 1]
+ [uint8_t  __pad1[3];                      ]
+  // offsetof = 4, sizeof = _Alignof = 4
+  uint32_t b;
+  // offsetof = 8, sizeof = _Alignof = 1
+  uint8_t  c;
+ [// offsetof = 9, sizeof = 3, _Alignof = 1]
+ [uint8_t  __pad2[3];                      ]
+};
+  \end{lstlisting}
+  \caption{C Structure Padding.}
+  \label{fig:struct_pad}
+  \caption*{The explicitly declared members of the structure are \lstinline{a} and \lstinline{b}. The structure is not \gls{byte-packed}, and we assume \gls{natural-data-alignment} requirements hold. As \lstinline{b} must have its \gls{data-alignment} requirement of $8$ \glspl{byte} met, the compiler inserts \gls{data-structure-padding} preceding this structure member, here illustrated as the undeclared structure member \lstinline{p}~(not technically accurate). This \gls{data-structure-padding} is not directly accessible, and its content is undefined at all times.}
+\end{lstfloat}
+
+\subsection{Implications of Data Structure Packing}
+
+To allow avoiding the space overhead of \gls{data-structure-padding}, many of the common compilers support data structure packing, such as by the \glsxtrshort{MSVC} extension \lstinline{#pragma pack}~\cite{msft-pack}. With it, the compiler can be instructed to limit the \gls{data-alignment} requirement of structure and union types. When forcing the \gls{data-alignment} requirement to $1$ \gls{byte}, a data type is \gls{byte-packed}. For structures, this effectively prevents the insertion of \gls{data-structure-padding}~(see Figures~\ref{fig:packed_struct} and~\ref{fig:aligned_vs_packed}). The compiler then guarantees that all structure and union member accesses are safe, regardless of the address of the accessed member.
+
+\begin{lstfloat}[ht]
+  \centering
+  \begin{lstlisting}[style=c]
+#pragma pack(1)
+// sizeof = 6, _Alignof = 1
+struct {
+  // offsetof = 0, sizeof = 1, _Alignof = 1
+  uint8_t  a;
+  // offsetof = 1, sizeof = 4, _Alignof = 1
+  uint32_t b;
+  // offsetof = 5, sizeof = 1, _Alignof = 1
+  uint8_t  c;
+};
+#pragma pack()
+  \end{lstlisting}
+  \caption{C Structure Byte-Packing.}
+  \label{fig:packed_struct}
+  \caption*{The structure is \gls{byte-packed}, which extends to all of its members, and thus everything has a \gls{data-alignment} requirement of 1 \gls{byte}. \Gls{data-structure-padding} never appears in \gls{byte-packed} structures.}
+\end{lstfloat}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics{Figures/AlignedVsPacked.pdf}
+  \caption{Data Structure Byte-Packing.}
+  \label{fig:aligned_vs_packed}
+\end{figure}
+
+\subsection{Basic Data Type Memory Layouts}
+
+After looking at the layout of members inside a data structure, another thing to consider is the layout of the basic data types themselves. \Gls{endianness} describes the \gls{byte} order of a multi-\gls{byte} basic data type. The two typical schemes are \gls{big-endian} and \gls{little-endian}. Take the $32$-bit value $\mathrm{AABBCCDD}_{16}$ as an example. Its \gls{big-endian} representation corresponds to the following \gls{byte} layout in memory
+\begin{lstlisting}
+  AA BB CC DD,
+\end{lstlisting}
+while the \gls{little-endian} layout is
+\begin{lstlisting}
+  DD CC BB AA.
+\end{lstlisting}
+
+While a detailed discussion of \gls{endianness} and its technical reasons is out of the scope of this thesis, for the two schemes just provided, there is an obvious design advantage each: With \gls{big-endian}, low-level debugging and such are simpler, as the \gls{byte} order follows the natural reading layout. For \gls{little-endian}, value truncation may not require explicit instructions compared to \gls{big-endian}:
+
+Take the value example from above, i.e. the $32$-bit value $\mathrm{AABBCCDD}_{16}$. Now, we want to truncate it to a $16$-bit value, leaving us with $\mathrm{CCDD}_{16}$. We currently have a pointer to the $32$-bit value. For \gls{big-endian}, we can see that the $16$-bit value
+\begin{lstlisting}
+  CC DD
+\end{lstlisting}
+resides at an offset of $2$ \glspl{byte} relative to the $32$-bit value. With \gls{little-endian}, the value
+\begin{lstlisting}
+  DD CC
+\end{lstlisting}
+resides at an offset of $0$ \glspl{byte} relative to the $32$-bit value. Thus, \gls{little-endian} saves an arithmetic operation when retrieving the address of the truncated $16$-bit value compared to \gls{big-endian}. Today, most general-purpose \glspl{CPU} use the \gls{little-endian} layout~\cite{ia32,arm-isa}.
+
+\subsection{Signed Integer Encoding}
+
+The \gls{twos-complement} is the default choice for encoding signed integers for modern technologies. It also is the de facto standard for common general-purpose \glspl{ISA}~\cite{ia32,arm-isa}. Also, recent revisions of the \gls{C} standard guarantee it as the only representation for its specified-width integer types~\cite{ISO:2018:III}.
+
+Mathematically speaking, it is the positive complement regarding $2^N$. It is common knowledge that it holds that:
+\begin{align*}
+  \forall n,N \in \mathbb{N}_0. \quad -n \equiv 2^N - n \pmod{2^N}
+\end{align*}
+\begin{proof}
+  $-n \equiv 2^N - n \Leftrightarrow 0 \equiv 2^N \Leftrightarrow 0 \equiv 0 \pmod{2^N}$
+\end{proof}
+
+$N$-bit integer arithmetic computes results $\bmod~2^N$ for addition, subtraction, and multiplication. The division is the regular integer division. In technical terms, the reduction $\bmod~2^N$ is commonly called an integer wraparound or integer overflow. As per the proposition above, it is easy to see that the same operator definitions hold for the \gls{twos-complement}.
+
+From any positive number, one can easily compute the negative number of the same value by inverting all bits and adding $1$. For example, for $-1$ and $N = 8$, we have:
+\begin{align*}
+   1_{10} &= 00000001_2,\\
+  -1_{10} &= 11111111_{2C},\\
+  11111111_{2} &= (2^8 - 1)_{10}.
+\end{align*}
+
+Historical alternatives to the \gls{twos-complement} were the \gls{ones-complement} and \gls{sign-and-magnitude}~\cite{ISO:2018:III}. Both include an explicit definition for $-0$ and arithmetic operations are not trivial to implement, e.g. \gls{ones-complement} addition requires an end-around-carry~\cite{1674817}. While other representations exist, they are not widely supported by general-purpose \glspl{CPU}.
+
+\subsection{Floating-Point Encoding}
+
+For floating-point numbers, \glsfirst{IEEE}~754 is a well-established standard for both representation and computational rules~\cite{8766229}. While some hardware does not follow the computational rules strictly and compilers allow to partially ignore them for performance and efficiency reasons~\cite{gcc}, the representation is de facto universal.
+
+\subsection{Character Encoding}
+
+The common standard for character encoding today is Unicode. It specifies multiple encoding formats, such as UTF-8 and UTF-16. The former is a strict superset of ASCII, the traditional 7-bit standard for control symbols and the English alphabet, and also is very common across different technologies. UEFI mostly uses UCS-2 encoding, a strict subset of UTF-16. With it, all characters occupy exactly $2$ \glspl{byte}. This allows to represent many non-English characters, but avoids any flexible-length parsing logic like UTF-8 requires. While UCS-2 is binary-incompatible with ASCII, all UCS-2 characters representable by ASCII can be converted to it by truncating to 7 or 8 bits (bit 7 is always 0 for characters representable by ASCII).
+
+Besides Unicode, any recent alternative character set we encountered also extends ASCII. As localization is not a concern for a binary file format, ASCII suffices as the de-facto universal standard.
+
+\section{Bit-Packing, Backward Compatibility, and Space Efficiency}
+
+\subsection{Bit-Packing in Image File Data Structures}
+
+We refer to storing information in as few bits as possible without changing its encoding format as \gls{bit-packing}. This makes it one of the most simple forms of compression. Taking the example of a boolean value, just a single bit suffices to store its value, while boolean data types generally occupy at least 1 \gls{byte}. \Gls{bit-packing} can be utilized to, for example, store eight boolean values in 1 \gls{byte}, one for each one of its 8 bits.
+
+Without further tricks, this is especially useful and popular for so-called feature flags, which are boolean values that indicate support for a feature or request a specific behaviour. Refer to Section~\ref{sec:constr_packing} for sophisticated utilization of this paradigm.
+
+\subsection{Relocation Fixup Tables and Chains}
+
+The traditional format to store \glspl{image-relocation-fixup} in an \gls{image-file} is a table. It may be nested, such that there is a table entry for each \gls{memory-page} of the \gls{image} and each such entry has a table of offsets relative to the \gls{memory-page} of its own. \glsxtrshort{Apple} introduced a new storage format for \glsxtrshort{MACHO} in recent years, called dyld chained fixups. This is again based on the table format with a table entry for each \gls{memory-page}. However, the new format stores \glspl{image-relocation-fixup} within a \gls{memory-page} as a linked list at the \gls{image-relocation} destination. This means the target of a \gls{image-relocation-fixup} stores a data structure that compresses the information located at the destination but adds the offset to the next \gls{image-relocation-fixup}.
+
+The \glsxtrshort{MACHO} format introduced a limitation on the \gls{image} \gls{address-space} size of 64 GiB, which requires $log_2(64 \cdot 1024^3) = 38$ bits to store a valid address in an \gls{image} \gls{address-space} if its \gls{image-base-address} is $0$. Meanwhile, as the chain is per \gls{memory-page}, the offset to the next \gls{image-relocation-fixup} can be at most $4095$ \glspl{byte}, thus requires $\lceil log_2(4095) \rceil = 12$ bits to store. It is obvious to see that both data require 50 bits of storage, which easily fits in the original 64-bit destination.
+
+This new organization of \glspl{image-relocation-fixup} can save a significant amount of storage space for \glspl{image-file} with a lot of \glspl{image-relocation-fixup}, as `free storage' completely subsumes the per \gls{memory-page} table.
+
+%%%%%%%% TODO:
+
+Substituting traditional \glspl{image-relocation-fixup} with their chained counterparts makes two assumptions:
+\begin{enumerate}
+  \item The \gls{image} does not need to execute as-is, as storing metadata inherently is incompatible with having a valid target value.\label{asm:chain_1}
+  \item The \gls{image} does not need to be relocated again, as applying a chained relocation fixup destroys the metadata, including the full index of \glspl{image-relocation-fixup}.\label{asm:chain_2}
+\end{enumerate}
+\gls{RT} drivers violate assumption~\ref{asm:chain_2}, as after the operating system determines the \gls{virtual-memory} address mapping of the \gls{UEFI} runtime memory, they may need to be relocated. This can be resolved by indexing the \gls{image-relocation-fixup} table during the first load-time \gls{image-relocation} and using this index when relocating again for runtime execution. Due to time constraints, we simply disabled chained \glspl{image-relocation-fixup} for \gls{RT} drivers and copy the index from the \gls{image-file}.
+
+Pre-memory \glspl{PEIM} violate both assumptions~\ref{asm:chain_1} and \ref{asm:chain_2}. For one, they need to execute from the \gls{firmware} storage before the main memory has been initialized. But also, they need to be relocated in case they are shadowed~(this counts as relocating a second time because the first time happened as part of preloading at build-time). Due to assumption~\ref{asm:chain_1}, we cannot store any metadata at the relocation target address and as such, we have to disable chained \glspl{image-relocation-fixup} for pre-memory \glspl{PEIM}.
+
+
+
+
+Similarly to the chained relocation fixups, the main table entries can be stored in an aggregating manner. For this, a root relocation entry stores the target address offset to the previous target address of the first image relocation fixup. For the first root entry, the previous reference address is always $0$. It is followed by a flexible array of image relocation fixup entries that store the type of the current and the target offset of the next image relocation fixup. In comparison to PE, which uses 4-KiB-divided blocks, this technique can aggregate arbitrarily many \gls{image-relocation-fixup} under a single image relocation root entry, so long as their offset is close enough. Like with image relocation fixup chains, our implementation allows offsets less than 4 KiB. Effectively, the image relocation table becomes a nested singly linked list.
+
+Furthermore, the image relocation target addresses --- this includes both \gls{image-relocation-fixup} from chains and the table --- are ordered ascending. As offset accumulation happens relative to the end of the previous image relocation fixup for either kind, this especially means that they are disjoint and that it can easily be verified in $O(n)$ while parsing the table. This could greatly benefit formalization or verification efforts, as the overall structure becomes much simpler and stricter. Verifying the correctness of deemed infeasible in the given timeframe when we verified a new implementation of the \gls{EDK2} \glsxtrshort{PE} loader.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics{Figures/UeRelocHierarchy.pdf}
+  \caption{UE Relocation Table Hierarchy.}
+\end{figure}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics{Figures/UeRelocLinking.pdf}
+  \caption{UE Relocation Table Organization.}
+\end{figure}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics{Figures/UeRelocDetails.pdf}
+  \caption{UE Relocation Table Delta Encoding.}
+\end{figure}
+
+\subsection{Optimized Bit Field Layout}
+
+There are two important operation classes for extracting values from bit fields. The first is the binary masking operator \texttt{AND}. Masking refers to the character of the operands, as the operation applies bit-wise. The other is the binary shift operators left-shift and right-shift. Rather than utilizing masks, their second operator is a `shift exponent'. The operations are identical to multiplying or dividing by $2^x$ respectively for their defined domain~(\glsxtrshort{C} prohibits shift exponents greater than or equal to the integer type's width). Compared to masks that affect specific bits at specific positions, the shift exponent affects the first operand's value as a whole. For fixed-width integers, it is obvious to see that the worst-case amount of masking bits is exactly the width of the first operand's type. Meanwhile, the shift exponent only requires a logarithmic amount of bits compared to the first operand. Thus, generally speaking, shift operations are easier to encode in machine instructions and may yield shorter machine code. Of course, this still depends on the exact circumstances, including the target \gls{ISA}.
+% TODO:
+Continuing the previous example of 4 KiB alignment, some data structures may store both the address of a \gls{memory-page} and something related to indexing within, like an offset, a size, or a number of elements. For the \gls{memory-page} address, as the (minimum) size is generally known at build-time, one can store only the factor to it. When processing those data separately, it is more efficient to store the \gls{memory-page} address low and the other datum high, even if it is an offset and the opposite arrangement would appear more natural.
+
+Feature flags are a special kind of bit field value, as there is no non-trivial value and especially the exact bit indices do not matter for the result. All that matters is whether the bit at the queried index is 0 or 1. Thus, they can be located anywhere in a bit field and always be evaluated with only a single \texttt{AND} instruction. However, especially for checking multiple feature flag bits that are located high at once, it may be beneficial to right-shift the bit field first and then test the bits with \texttt{AND} operations that now utilize shorter masks. Some \glspl{ISA} allow for shorter instruction encodings for the \texttt{AND} operations as a result.
+
+\subsection{Utilizing Constraints for Compressed Encoding}
+\label{sec:constr_packing}
+
+In terms of \gls{image-file} formats, there are various constraints on metadata as we have seen. For example, the \gls{data-alignment} for \glspl{image-segment} must be a power of two. The most efficient way to encode this information is
+\[ log_2(x). \]
+By storing only the exponent, we can compress a $32$-bit \gls{image-segment} \gls{data-alignment} to only a 5-bit exponent. Decoding requires only a single binary operation:
+\[ 2^x = 1 \ll x. \]
+%Combining this with Requirement, % TODO: 4 KiB segment minimum %% this can be further simplified to $log_2(x - 4096) = log_2(x) - 12$, leaving us with a maximum exponent of $20$
+
+To enable a minimum amount of backward compatibility, any unused bits must be declared must-be-zero. This way, future specifications can utilize these bits to invoke new behaviour for non-zero values, without changing the semantics of old binaries.
+
+\subsection{Separate XIP Metadata from the Image Address Space}
+\label{sec:ue_xip}
+
+UEFI XIP executable files reside on the firmware storage. They are a special class of executable files that must be executable without further modification, including image loading and image relocation. Techniques like chained \gls{image-relocation-fixup} cannot be employed, as they rely on storing metadata within the image address space.
+
+Most notably, XIP means that image segments must be stored aligned, so the necessary padding must be stored explicitly. When adhering to the platform \gls{memory-page} size, this can be a significant overhead and might yield several kibibytes of padding. As firmware storage is usually limited, the amount of aligned data should be reduced to a minimum.
+
+For the PE format, the image header, relocation directory, and similar metadata are part of the image address space. As such, they must be aligned by the image alignment constraint. As this metadata are technically not part of the image and always should be read-only, they can be stored separately while preserving the general image semantics.
+
+Thus, we propose to split the metadata from the image address space entirely. Compared to a non-XIP image, an XIP image should emit two files:
+- The metadata file stores the image header, the image relocation directory, the image debug directory, and other kinds of metadata. It only needs to be aligned with regards to the data structure alignment constraints and should be protected with read-only permissions.
+- The image address space file stores the actual image content. The image segments may have interdependent references and as such they cannot be split. Thus, to honour their potentially different memory permissions, they must be stored aligned by at least the platform page size.
+
+The current FFS design organizes executable files in a flat matter.
+
+\section{Encoded Constraints, File Prefix Hashing, and Loader Security}
+
+\subsection{Enforcing Constraints via Compressed Encoding}
+
+Another example is that \glspl{image-segment} must be aligned at least at a 4 KiB boundary as per Requirement X. % TODO
+As such, their addresses and sizes can be encoded as-is, but we know that
+\[ x\bmod 2^{12} = x~\&~\mathrm{00000FFF}_{16} = 0, \]
+which effectively frees the lower 12 bits. When designating bits $[12 \twodots 31]$ in a $32$-bit value to the same bits of the address and size each as seen, a single binary operation is sufficient to decode either value:
+\[ x - x\bmod 2^{12} = x~\&~\mathrm{FFFFF000}_{16}. \]
+bits $[0 \twodots 11]$ can now be utilized for other purposes, e.g. feature flags.
+
+In both cases, encoding the constraints this way not only compresses the data but also enforces them at the same time. It no longer is possible to encode values that violate the specification in these two cases and as such, this technique can obsolete dynamic checks.
+
+\subsection{File Prefix Hashing and Embedded Digital Signatures}
+
+\begin{algorithm}
+  \caption{Hashing a UE File With an External Signature.}
+  \label{algo:dhash}
+  \begin{algorithmic}[1]
+    \Require{The \gls{executable-file} buffer, \gls{cryptographic-hash} function as input.}
+    \Ensure{The \gls{image} \gls{cryptographic-hash} buffer has the \gls{UE} file \gls{digital-signature}.}
+    \State Apply the \gls{cryptographic-hash} function to the entire \gls{executable-file} buffer.
+  \end{algorithmic}
+\end{algorithm}
+
+\subsection{Reducing Leaked Information}
+\label{sec:reduce_info}
+
+It is common for \glspl{image-file} to load their \gls{image-file-header} and debugging information into the \gls{image} \gls{address-space} --- for the \glsxtrshort{PE} format, this is even done implicitly. This makes it easy to debug an \gls{image} by having all required data easily discoverable by memory traversal. However, this also has important downsides:
+\begin{enumerate}
+  \item This information occupies significant space, especially as all \glspl{image-segment} must be aligned at a \gls{memory-page} boundary.
+  \item This information can be used by an operating system runtime attack on \gls{RT} drivers to modify them with great reliability and predictability.
+\end{enumerate}
+
+Even for production builds, which have most of the useful debugging information stripped, the \glsxtrshort{PE} format requires loading the \gls{image-relocation} information into the \gls{image} \gls{address-space}. While it can be discarded safely after loading and linking have finished in theory, most notably the \gls{EDK2} \glsxtrshort{PE} \gls{image-file-loader} does not do this.
+
+% FIXME!!!
+For this reason, we propose two optional modes for debugging the \gls{UE} format:
+\begin{enumerate}
+  \item Like with \glsxtrshort{ELF} and \glsxtrshort{MACHO} already, an \gls{image} can contain its own \gls{image-file-header} and debugging information. This allows for the traditional workflow of debugging low-level software.
+  \item The format exposes debugging information to the \gls{image-file-loader}, such that the \gls{UEFI} implementation can build a debugging table to aggregate crucial debugging information. Such a table exists already but does not contain sufficient useful information, such as the path to the \gls{image-symbol} file.
+\end{enumerate}
+
+\subsection{Reimplementing HII Package List Exposure}
+
+Due to the parsing burden on the \gls{module-dispatcher} and the overcomplicated structure of the \glsxtrshort{PE} resource directory, we propose a novel replacement for the current \gls{UEFI-HII} package list storage. It must meet the following requirements:
+\begin{itemize}
+  \item Due to technical requirements by \glspl{IBV}, tools must be able to replace the \gls{UEFI-HII} package list post-build~\cite{hii-mail}.
+  \item Due to the implementation details of the \gls{EDK2} Shell, the \gls{UEFI-HII} package list must be parsable at boot-time.
+  \item To provide a significant security benefit over the current solution, the production code paths must not rely on parsing the \gls{UEFI-HII} package list container.
+  \item To provide a significant portability benefit, it should not rely on concepts that are not well established among the common \gls{executable-file} formats, \glsxtrshort{PE}, \glsxtrshort{ELF}, and \glsxtrshort{MACHO}.
+\end{itemize}
+
+The layout of data inside \glspl{image-segment} depends on the \gls{image-linker} that composes it. However, given only a single datum, the common \gls{MSVC}, LLVM lld, and \glsxtrshort{GNU} ld \glspl{image-linker} will all produce an \gls{image-segment} with this datum located at the very beginning. This behaviour can be utilized by aggregating all \gls{UEFI-HII} package list data into a single \glsxtrshort{C} struct, instantiating a global variable from it, and assigning it to a dedicated \gls{image-file-section} (which will be the only \gls{image-file-section} of a dedicated \gls{image-segment}).
+
+To meet the second requirement and allow substitution of the \gls{UEFI-HII} package list, which means its size cannot be known at build-time, we store it along with the data~(see Figure~\ref{fig:new_hii_image}). This way, the size can be updated if the substituting \gls{UEFI-HII} package list is larger or smaller than the substituted one.
+
+As we are guaranteed this data structure instance resides at the beginning of the designated \gls{image-segment}, the \gls{UEFI-HII} package list can be located, parsed, and replaced with one that is at most the same size. To be able to replace it with a larger one, we force the designated \gls{image-segment} to be at the end of the \gls{image} \gls{address-space}. This allows us to grow and shrink it as required without affecting the rest of the \gls{image}.
+
+\begin{lstfloat}[ht]
+  \centering
+  \begin{lstlisting}[style=c]
+typedef struct {
+  UINT32                      Size;
+  EFI_HII_PACKAGE_LIST_HEADER Header;
+  //
+  // UEFI HII package list data.
+  //
+} MODULE_HII_PACKAGE_LIST;
+  \end{lstlisting}
+  \caption{Data Structure for the UEFI HII Package List.}
+  \label{fig:new_hii_image}
+  \caption*{The data structure that encodes the \gls{UEFI-HII} package list in a novel approach. Unlike the conventional \gls{UEFI} solution, which uses the \glsxtrshort{PE}-specific resource directory that requires extra parsing, we utilize a regular \glsxtrshort{C} struct instance. To preserve the flexibility of the former method, the data structure is self-contained and forced into a dedicated \gls{image-segment} similarly to before.}
+\end{lstfloat}
+
+\chapter{Implementing UEFI Executable Conversion and Loading}
+\label{chap:uefi_exec_impl}
+
+\section{Image Generation and Image Abstraction}
+
+Like the current tooling used by \gls{EDK2} for some platforms, \gls{UE} files should be generated from other \gls{image-file} formats.
+
+For this, we utilize the previously defined \gls{image} abstraction to power the conversion as such:
+
+\begin{enumerate}
+  \item Convert \glsxtrshort{PE}, \glsxtrshort{ELF}, \glsxtrshort{MACHO}, and \gls{UE} \glspl{image-file} into an intermediate representation.
+  \item Perform operations on the intermediate representation~(e.g. expand the \gls{image-segment} data for \gls{XIP}).
+  \item Convert the intermediate representation into an \gls{UE} file.
+\end{enumerate}
+
+The intermediate representation is an abstraction of its own that closely reflects the data structures aspect of the \gls{image} abstraction.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics{Figures/InterRep.pdf}
+  \caption{Image Intermediate Representation.}
+  \caption*{}
+\end{figure}
+
+\subsection{Semi-Canonical Intermediate Representation}
+
+The proposed intermediate representation is a manifestation of the \gls{image} abstraction that we defined to make it easier to convert between specific \gls{image-file} formats. As such, it can be used not only as an intermediate step in conversion but also to abstractly represent an \gls{image} in general. To take advantage of this ability to validate the equivalence of the source \gls{image-file} and the destination \gls{image-file}, we propose making the intermediate representation canonical:
+
+\begin{itemize}
+  \item Most of the metadata is trivially canonical.
+  \item \Glspl{image-segment} appear in ascending order by their address.
+  \item \Glspl{image-segment} sizes are multiples of the \gls{image} alignment.
+  \item Any \gls{image-relocation-fixup} that is not strictly required for \gls{image-relocation} is discarded.
+  \item \Glspl{image-relocation-fixup} appear in ascending order by their address.
+\end{itemize}
+
+% TODO: 5.1.2 or merge with section
+\subsection{Image Debugging Information and Image Address Space}
+
+The \glsxtrshort{PE} format has a property that sets it apart from the other \gls{image-file} formats. The \gls{image-file-header} is loaded at the \gls{image-base-address} and the first \gls{image-segment} starts after the \gls{image-file-header}. Other \gls{image-file} formats always load the first \gls{image-segment} at the \gls{image-base-address}, and if the \gls{image-file-header} is to be loaded, it must be part of the former. As we generally do not want to load the \gls{image-file-header} into the \gls{image} \gls{address-space} at all, it must be stripped during the conversion.
+
+In consequence, when converting an \gls{image-file} to the new \gls{executable-file} format, the \gls{image-file} is first rebased to the \gls{image-base-address} minus the offset of the first \gls{image-segment} and then the \gls{image-base-address} is reset to the previous value. As a result, the \gls{image-file-header} was stripped from the \gls{image} \gls{address-space} without changing the \gls{image-base-address}.
+
+For debugging, this means the \gls{image-symbol} file will not match the newly converted file. For \glsxtrshort{ELF} and \glsxtrshort{MACHO} source files, the source file itself is the \gls{image-symbol} file and as such, they could have the reserved area for the \gls{image-file-header} stripped as well. However, for \glsxtrshort{PE} files, generally, debug information resides separately in a \gls{PDB} file~\cite{pdb-doc}, which is non-trivial to rebase due to its proprietary nature~\cite{pdb-doc-deprecation}. As a workaround that suits all source \gls{image-file} formats, we store the stripped size along with the file path of the \gls{image-symbol} file. When mapping the latter with a debugger, the \gls{image-base-address} is adjusted by said stripped size to account for the missing \gls{image-file-header}, such that the offsets of the \gls{image-segment} in the \gls{image} \gls{address-space} match again.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics{Figures/UeDebug.pdf}
+  \caption{UEFI Executable Debug Model.}
+  \caption*{}
+\end{figure}
+
+\section{Unstable Design and Scope Limitation}
+
+The proposed novel \gls{UEFI} \gls{executable-file} format intentionally has an unstable design that is subject to change. This allows adjustments during early adoption to accommodate previously unknown use cases without the technical debt resulting from backward compatibility. For plenty of reasons, it may be desirable to preserve the unstable nature of the \gls{executable-file} format for \gls{firmware}-internal usage. With the introduction of \gls{FCFI} mitigation support to the \glsxtrshort{PE} format, none of the intended ways of extensibility, such as the concept of data directories, was supported by \gls{EDK2} in a backwards-compatible fashion. In response, the revised \glsxtrshort{PE} format designates a \glsxtrshort{PE} debug entry to expose the necessary metadata to support \gls{FCFI} mitigations~\cite{pe-format}. This yields unexpected semantics as the previous design designated these entries solely for debugging, which typically required only a single entry~\cite{edk2}.
+
+However, for \gls{firmware}-internal images built from source, there is little reason to support backward compatibility, as they're built anew with every new revision of the \gls{firmware} image. This would allow extending the unstable \gls{executable-file} format with sound concepts when required without the need to define sophisticated abstractions for extensibility ahead of time.
+
+The dual nature of the \gls{DXE} \gls{module-dispatcher} may yield security concerns with such a format. While it mostly loads \gls{firmware} \glspl{image-file}, the \gls{EDK2} implementation \textit{DxeCore} is also responsible for losing \glspl{image-file} during \gls{BDS} and as such also deals with external sources, such as drives. Old \glspl{image-file} following a previous revision of an unstable \gls{image-file} format may appear correctly signed despite a different interpretation from the original. A bug in the parsing code may then yield unexpected security issues.
+
+To combat this and accidental adoption outside the intended scope, the genetic \gls{UEFI} \gls{image-file-loader} library API requires information on the plausible sources of the \glspl{image-file}. With the current design, this can be a \gls{FVg}, everything but a \gls{FVg}, or either. This allows platform designers to limit the support for the novel \gls{UEFI} \gls{executable-file} format to only \glspl{FVg}, while \glsxtrshort{PE} remains supported for any public sources, i.e. outside a \gls{FVg}. By offering multiple flavours of the library, each designated to a different set of sources, support code for an \gls{image-file} format that must not appear in all covered sources can be explicitly excluded.
+
+\section{Image Loading and Image Abstraction}
+
+The \gls{image} abstraction is not only useful for \gls{image} generation but also \gls{image} loading. Here, the operations on the \gls{image} abstraction are most relevant.
+
+\subsection{Generic UEFI Executable File API}
+
+To not break the UEFI boot specification and thus backward compatibility, we still need to support PE files, of course. To not put the burden of supporting UE and PE simultaneously on the caller code, and to strengthen the image loader design, we developed a new, generic library API. Like the code for image generation, it is also based on the UEFI image abstraction we defined, and it implements all the generic operations. We did not abstract the segment and relocation tables and instead provided higher-level abstractions, such as retrieving an `image record' that contains all necessary information to apply memory protections to an image address space.
+
+\subsection{Support for Multiple Executable File Formats}
+
+Using a generic API for multiple \gls{image-file} formats means that every function needs to distinguish between them for any particular reference object. To enable this, we introduced generic context structures for load-time and runtime contexts. These start with a format identifier, which allows us to efficiently determine the \gls{image-file} format. Our implementation defines another, internal data structure that aggregates pointers to all format-specific library and helper functions, which is statically instantiated for both UE and PE. The generic function implementations use a macro that implements an efficient decision for which of those structures to use for format-specific calls. For further flexibility, it incorporates checks for build-time configuration options that define which \gls{image-file} formats are supported. We verified that with all modern toolchains (VERSIONS!!), the indirection via the internal data structures is optimized away when LTO is enabled. The same is true for all support code for \gls{image-file} formats that have been disabled via said build-time configuration.
+
+\subsection{Support for Per-Source Configuration}
+
+As declared by the scope for the UE format, it is intentionally unstable and targeted at firmware-internal usage, so exclusively from the firmware storage. Old UE binaries may remain valid structure-wise, but their semantics may be interpreted differently by a new parser. This could cause unobvious security vulnerabilities. At the same time, some UEFI PI and UEFI phases will only load \glspl{image-file} from the firmware storage, such as PEI and MM. However, with a naive library design, they would still carry the support code for PE files.
+
+For these reasons, we added added configuration options to choose which \gls{image-file} formats are available from either the firmware or external storage. For the scope of UE, this would mean the firmware storage would only carry UE files, while external storage only carries PE files. The caller specifies the \gls{image-file}'s source when initiating the parsing. Like with the configuration for supported file formats on the library-internal level, we verified that LTO optimized the unreachable support code away. This solves both problems at once - an attacker cannot introduce old UE binaries to the system to trigger exploitable behaviour, and the dispatchers that process only firmware \glspl{image-file} do not carry support code for both \gls{image-file} formats. As the DXE phase deals with both sources, because it provides the image infrastructure to the BDS phase, it inherently has to support both \gls{image-file} formats.
+
+\section{Algorithms for the UEFI Executable Format}
+
+\begin{algorithm}
+  \caption{Loading a UE File.}
+  \label{algo:load}
+  \begin{algorithmic}[1]
+    \Require{A buffer that has sufficient space to hold the \gls{image} \gls{address-space} as input.}
+    \Ensure{The input buffer holds the \gls{image} \gls{address-space}.}
+    \For{every \gls{image-segment}}
+      \State Copy the \gls{image-segment} file contents.
+      \State Zero the remaining \gls{image-segment} space.
+    \EndFor
+    \State Zero the remaining data of the \gls{image} buffer.
+  \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+  \caption{Relocating a UE File.}
+  \label{algo:reloc}
+  \begin{algorithmic}[1]
+    \Require{The \gls{image} buffer and the new \gls{image-base-address} as inputs.}
+    \Ensure{The \gls{image} has been relocated to execute from the \gls{image-base-address}.}
+    \For{every \gls{image-relocation} table entry}
+      \For{every \gls{image-relocation-fixup} in the \gls{image-relocation-fixup} chain}
+        \State Process the linked \gls{image-relocation-fixup}.
+      \EndFor
+    \EndFor
+  \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+  \caption{Setting up a UE File for Execution.}
+  \begin{algorithmic}[1]
+    \Require{The \gls{executable-file} as input.}
+    \Ensure{The \gls{executable-file} is ready to be executed.}
+    \State Hash the \gls{executable-file}~(execute Algorithm~\ref{algo:dhash}) and ensure authenticity.
+    \State Parse the \gls{executable-file} and ensure structural correctness.
+    \State Allocate enough \glspl{memory-page} to hold the \gls{image} \gls{address-space} as read-write.
+    \State Load the \gls{image}~(execute Algorithm~\ref{algo:load}).
+    \State Relocate the \gls{image}~(execute Algorithm~\ref{algo:reloc}).
+    \For{every \gls{image-segment}}
+      \State Enforce the requested \gls{image-segment} \glspl{memory-permission}.
+    \EndFor
+    \State Flush the execution cache for the \gls{image} \gls{address-space}.
+  \end{algorithmic}
+\end{algorithm}
+
+% TODO: IPF? x86 SDM self-modifying
+
+\section{Functional Validation}
+
+\subsection{Format Constraint Validation}
+\label{sec:constr_val}
+
+In the past, malformed \glspl{image-file} have been shipped by various sources~\cite{ipxe-fix,gnu-efi-fix}. The issues range from suboptimal configuration, such as too lax \gls{image-segment} \gls{data-alignment}, to breaches of the \glsxtrshort{PE} specification, such as misaligned data structures. In order to combat issues like this, there must be an extensive structural validation of all generated \glspl{image-file}. To guarantee constraints end-to-end, this should be performed with the help of the corresponding boot-time parsing \glspl{library}.
+
+For performance reasons, typical parsing \glspl{library} do not verify all requirements, including our proposed \gls{UE} \gls{library} and the reworked \glsxtrshort{PE} \gls{library}~\cite{secure-pe}. This may be because the constraint in question does not yield unsafe behaviour if violated, for example, the order of \glspl{image-relocation-fixup}. To account for this, we propose supporting an optional flag to enable extensive structural validation. This must be disabled in production \gls{firmware} to not compromise performance, but debug \gls{firmware} may utilize it at the preference of the platform maintainer. Most importantly, after generating an \gls{image-file} at build-time, it must be parsed with the extensive structural validation enabled, to ensure it is well-formed and adheres to all requirements of the consumer.
+
+Re-using the parsing \gls{library} utilized at boot-time ensures that the producer and consumer code remain in sync. Note that when making changes to the \gls{image} parsing code, the entire \gls{firmware} \gls{image} must be rebuilt to ensure all \glspl{image-file} pass the extensive structural validation performed by the \gls{image-file} format conversion tool.
+
+\subsection{Conversion Equivalence Validation}
+\label{sec:conv_eq}
+
+% TODO:
+
+To validate the correctness of the conversation, we can now compare the equivalence of the canonical intermediate representations of the source file and the destination file.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics{Figures/ImageGenStack.pdf}
+  \caption{Executable File Conversion Architecture.}
+  \caption*{}
+\end{figure}
+
+
+
+\chapter{Results and Discussion}
+\label{chap:results}
+
+\section{Safety Validation}
+
+To ensure the safety of our implementation, we applied sophisticated analysis methods and performed comprehensive tests. While without employing formal verification techniques this is impossible to guarantee, the goal is to ensure safety, especially memory safety in particular, for all conforming and malformed inputs. Due to time constraints, we focussed only on \glsxtrshort{PE}-to-\glsxtrshort{UE} and \glsxtrshort{UE}-to-\glsxtrshort{UE} conversions for static analysis and \gls{fuzz-testing}. As such, both \glsxtrshort{ELF} input parsing and \glsxtrshort{PE} output generation are completely unvalidated. Also, we excluded \glspl{library} provided by the upstream \gls{AUDK} project from static analysis.
+
+\subsection{Static Analysis}
+
+% FIXME: All of this!
+
+For static analysis, we utilized GitHub CodeQL, Clang Static Analyzer, and Coverity. All three tools found valid bugs both in the upstream \gls{image-file} conversion tool and the support logic for the novel executable format. While fixes for the latter were squashed as development artifacts, the former were resolved in the commit range FIXME of our AUDK fork. The classes of valid bugs discovered were resource leaks and unterminated strings (technically not a bug, but a welcome precaution). We never addressed nor inspected reported issues in underlying libraries from AUDK. At the time of writing, no valid bugs in our implementation remain from the reports.
+
+\subsection{Fuzz Testing}
+
+We performed \gls{fuzz-testing} using LLVM libFuzzer~\cite{libfuzzer} and the existing OpenCore infrastructure for userland fuzzing~\cite{opencore}. Two separate tools cover the parsing library and the conversion tool for the new \gls{executable-file} format, respectively~\cite{thesis-git}. In addition to the \gls{executable-file} input, the OpenCore fuzzing infrastructure randomizes the global state for \gls{fault-injection} and platform configuration. To accomplish this, a configuration region is reserved at the end of the \gls{fuzz-testing} input.
+
+OpenCore \gls{fuzz-testing} utilities share the trailer of the input data among the fuzz target input and the configuration region, as this allows to easily add legitimate, real-world inputs to the \gls{fuzz-testing} corpus. Testing the \glsxtrshort{PE} parsing library like this yielded good results, as the shared region corresponds to \glsxtrshort{PE} debug data that does not affect the control flow much. For the new \gls{executable-file} format, however, data is much more tightly-packed and there is little free-form data. To guarantee good results, we segmented the input data to strictly separate the fuzz target input from the global state configuration. To still use seed the \gls{fuzz-testing} corpus with real-world inputs, we developed a script that appends a global state region to them.
+
+The initial state disables any \gls{fault-injection}, hence all of them should reach an overarching success path. The fuzzer can now mutate the global state configuration, the \gls{fault-injection} in particular, to trigger alternative and error paths, without altering the \gls{executable-file} portion of the input.
+
+\subsection{Fault Injection into Dynamic Memory Allocation}
+
+To trigger all error handling paths, the OpenCore \gls{fuzz-testing} infrastructure performs \gls{fault-injection} on the \gls{EDK2} memory allocation library functions. At the time of writing, this is done via a  bitmap of width $64$. While bitmaps allow complex patterns to recur, the \gls{executable-file} format conversion tool aborts execution when \gls{dynamic-memory-allocation} fails. As such, failure patterns will not improve the path coverage of the fuzz target. At the same time, the width of the bitmap limits which allocations can be failed. As every allocation failure terminates the tool, at most $64$ applications can be failed by having exactly one bit cleared at a time. Due to the use of dynamically-growing buffers, more dynamic allocations may occur, however, they are unable to fail.
+
+To address this issue, we propose a new modulo-based \gls{fault-injection} mode~\cite{thesis-git}. Instead of failing a \gls{dynamic-memory-allocation} when the bit that corresponds to its index is clear, it fails if its index $\bmod~N$ is equal to $N - 1$. This way, the fuzzer can increment the modulus to successively fail every individual dynamic allocation. This exponentially increases the maximum amount of \glspl{dynamic-memory-allocation} that can be failed compared to the bitmap approach. On the downside, it does not allow for \gls{fault-injection} patterns, but always fails every $N$-th \gls{dynamic-memory-allocation}. As every failure is fatal in our case, this does not cause any issues, though.
+
+To be able to inject faults into every \gls{dynamic-memory-allocation}, the growing size of the dynamically-growing buffers was limited to $4$ \glspl{byte}, forcing frequent reallocations. Otherwise, it would be possible that certain operations could never realistically fail, as previous expand operations would always allocate sufficient memory, but this is infeasible to prove and maintain.
+
+\subsection{Fuzz Testing Feature Collisions and Fabrication}
+
+\section{Functional Validation}
+
+Of course, while safety and security are crucial to low-level software implementations, reliability and correctness are equally important. To validate the functionality of our implementation, we performed various kinds of manual and automated tests. In the following, we will discuss the functionality tests we performed regarding unit and system testing, as well as automated test case generation using \gls{fuzz-testing}.
+
+\subsection{Unit Testing with Build Artifacts}
+\label{sec:unit_tests}
+
+To test the functionality of the conversion logic, we convert all \glspl{image-file} from \gls{OVMF} and \gls{ArmVirtQemu} across all supported architectures and targets from \glsxtrshort{PE} to \gls{UE}. The correctness check of the output is part of the conversion procedure itself~(see Section~\ref{sec:conv_eq}) and does not require pre-computed outputs. This implicitly tests the correctness of most parts of the parsing library, as the correctness validation uses it for most parsing tasks~(see Section~\ref{sec:constr_val}). Rather than providing a separate test infrastructure for the remaining parts of the parsing library, future work should focus on deduplicating the unused parts of the parsing library as a first step~(see Section~\ref{sec:reloc_dedupe}).
+
+\subsection{System Testing with Virtual Machines}
+
+To test the functionality of the fully integrated system, we adapted the existing boot test infrastructure of \gls{AUDK}. We adjusted the \gls{OVMF} and \gls{ArmVirtQemu} platforms to use our novel \gls{executable-file} format for the \gls{DXE}~(excl. \gls{EDK2}'s \textit{DxeCore}), \gls{RT}, and \gls{MM} stages. A script then performs automated tests with resulting \gls{firmware} \glspl{image} using the following environments~\cite{ocbuild}:
+
+\begin{itemize}
+  \item \textbf{TestConsole:} A simple \gls{UEFI} application that prints `Hello World!' to the standard output console~\cite{ocbuild}.
+  \item \textbf{TestLinux:} A minimal Linux 6.3 environment that performs basic platform initialization and then prints `Hello World!' to the standard output console~\cite{ocbuild}.
+  \item \textbf{TestWindows:} A Windows 10 Preinstallation Environment that boots to a command prompt~\cite{ocbinarydata-winpe}.
+\end{itemize}
+
+\subsection{Automated Test Case Generation with Fuzz Testing}
+
+\include{main_cov}
+
+\section{Space Efficiency Evaluation}
+
+To compare the space efficiency of the newly-proposed format against the established \glsxtrshort{PE} solution, we generated both kinds of \glspl{executable-file} from the \gls{OVMF} and \gls{ArmVirtQemu} platforms across architectures and build targets. In contrast to unit testing~(see Section~\ref{sec:unit_tests}), \textit{OvmfIa32X64} was not considered, as \textit{OvmfIa32} and \textit{OvmfX64} provide a superset to its \glspl{image-file}. Similarly, the toolchain \textit{CLANGPDB} was not considered, because it does not support compiling \glsxtrshort{Arm} \glspl{image-file} and thus might skew the final results between the architectures.
+
+\input{AutoGenerated/main_size_rel}
+
+\input{AutoGenerated/main_size_abs}
+
+\input{AutoGenerated/main_size_tot}
+
+\section{Artifact Evaluation and Reproducibility}
+
+To ensure the reproducibility of our results, we released a Docker~\cite{docker} container image~\cite{oci} with the development and testing environment used to produce all artifacts and to perform all tests~\cite{thesis-git}. Furthermore, we set up a GitHub Actions \gls{CICD}~\cite{gh-actions} infrastructure to automate artifact generation and all tests based on the existing \gls{AUDK} infrastructure. We used GitHub Actions \gls{CICD} to produce all discussed results, which did not involve self-hosted runners or proprietary code.
+
+To increase confidence in the results, we also released a container description file that should continue to produce Docker images close to the image we provided. Unfortunately, bit-by-bit reproducibility is currently not a core feature of Docker and solutions like repro-get~\cite{repro-get} proved to be suboptimal for Ubuntu-based container base images. As a best-effort approach, we provide a Docker container image description that pinned all versions of all packages installed.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\chapter{Conclusion} %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{Conclusion}
+\label{chap:conclusion}
 
-\blindtext[2]
+In order to significantly reduce the complexity of runtime parsing of \gls{UEFI} \glspl{executable-file}, we have proposed a novel format that is strictly tailored to \gls{UEFI} \gls{firmware} requirements. We have shown that files of our new format provide considerable space-saving when used for all platform modules, and their internal organization is visibly simpler compared to \glsxtrshort{PE}. In particular, it significantly extends the benefits of \glsxtrshort{TE} while retaining the expressiveness of \glsxtrshort{PE} in a \gls{UEFI} context.
+
+In addition, to make \gls{image-file} conversion easier to maintain, extend, and validate, we have implemented an approach based on an intermediate representation. This allows input and output formats to be processed independently of each other. At the same time, operations such as relocating an \gls{image} became format-independent, contributing to improved extensibility. Because we designed the intermediate representation to be semi-canonical, we were able to use it to reduce the validation of the output file to parsing the input file and comparing the resulting intermediate representation to the original one. With a small caveat, we did not encounter any malformed output files, as the conversion tool correctly aborted if the conversion was incorrect.
+
+Finally, we applied static analysis and \gls{fuzz-testing} to our implementation. Due to the equivalence checking performed by the conversion procedure, the latter covered both safety and functional testing. After fixing the initial set of bugs, neither approach uncovered any new problems, and at the same time, we encountered no problems during real-world testing.
+
+We subjected all results to artifact evaluation~\cite{thesis-git}. This includes pre- and post-conversion \glspl{executable-file}, \gls{AUDK} \gls{firmware} images for virtual machines, static analysis reports, and the \gls{fuzz-testing} corpora along with their code coverage. To further ensure reproducibility, GitHub Actions \gls{CICD} performed all tests using a semi-reproducible container. We have included both the container image used and the corresponding build description in the supplementary material.
+
+\chapter{Future Work}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\label{chap:future_work}
+
+\section{Missing Features and Architectures}
+
+\begin{itemize}
+  \item \textbf{\gls{XIP}:} At this time, the planned \gls{XIP} mechanisms~(see Section~\ref{sec:ue_xip}) cannot be implemented, because the current \gls{EDK2} build system generates all \glsxtrshort{PE} files as \gls{XIP} and later stages rely on this fact. This is ensured by GenFw~(see Section~\ref{sec:genfw}). For underaligned \glsxtrshort{PE} files, the difference in space requirement is negligible, and the parser does not need to distinguish between \gls{XIP} and non-\gls{XIP}. As for the novel \gls{executable-file} format, we proposed a strict distinction, there is no good way to integrate \gls{XIP} support at this time. This implies that neither \gls{SEC} nor \gls{PEI} are currently supported.
+  \item \textbf{DxeCore:} \Gls{EDK2}'s \textit{DxeCore} currently tries to re-parse its own \gls{image-file-header} to gather the information for \gls{image} \gls{address-space} memory protection. This works for \glsxtrshort{PE} files because their \gls{image-file-header} is always loaded implicitly into the \gls{image} \gls{address-space}. For the novel \gls{executable-file} format, we proposed to not do so~(see Section~\ref{sec:reduce_info}). The issue can easily be fixed by having \textit{PeiCore} pass the necessary information to \textit{DxeCore} via \glspl{HOB}. However, we did not implement this due to a novel patch to introduce memory protection into the \gls{PEI} phase~\cite{pei-mem-perms}. Its introduction would implicitly resolve the issue.
+  \item \textbf{RISC-V, LoongArch, \gls{FCFI}:} As we targeted the \gls{EDK2} fork \gls{AUDK}, we did not implement support for the RISC-V and LoongArch \glspl{ISA}, or for \gls{FCFI}, as \gls{AUDK} does not support any of them at the time of writing. Supporting the two \glspl{ISA} only requires porting their \gls{ISA}-specific \gls{image-relocation-fixup} to the novel \gls{executable-file} format, while \gls{FCFI} only requires translating a support flag, assuming \glsxtrshort{PE} support for all of them is added first.
+\end{itemize}
+
+\section{Deduplication of Image Relocation Table Parsing}
+\label{sec:reloc_dedupe}
+
+\section{Boot-Time Unit Testing}
+
+\section{Module Inter-Linking}
+
+\gls{UEFI} continues to embrace a very modular architecture, factoring different functionalities into separate drivers, much like operating systems kernels do~(terminology may vary, e.g. for macOS they are called kernel extensions). However, \gls{UEFI} and \gls{EDK2} in particular even separate security-critical components like the \glsxtrshort{CPU} abstraction used to apply \glspl{memory-permission} and generic platform policies like the supported \gls{image} authentication technologies~\cite{pi-spec,edk2}. The former makes \gls{EDK2} downstreams prone to load order-related bugs, the latter requires preserving API stability for no particular reason (and thus makes it hard to reuse an existing context structure that represents an \gls{image-file}, as the structure is subject to change). The obvious solution is to attempt to merge modules where beneficial.
+
+\subsection{Static Linking, Pre-Ordering, and Events Listeners}
+
+\Gls{static-linking} is the easiest technique to merge modules. One approach is to design modules as \glspl{static-library} and manually invoke their initialization routines as necessary. Another approach is to utilize \gls{EDK2} library constructors as entry points and let the \gls{EDK2} build system automatically order the constructors by the \gls{static-library} dependency lists.
+
+\subsection{Prelinking and Composite Modules}
+\label{sec:compmod}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics{Figures/AppleKC.pdf}
+  \caption{Kernel Collection Executable File Format.}
+  \caption*{A simplified overview of the \glsxtrshort{Apple} \gls{kernel-collection} format. It aggregates an operating system kernel and any number of kernel extensions into one, unified kernel collection \gls{executable-file}. The \gls{dynamic-linker} creates a wrapper \glsxtrshort{MACHO} \gls{image} that has the components shown above as \glspl{image-segment}. The kernel extension info dictionaries~(they contain information like which devices to attempt attaching to) are aggregated into one, unified kernel extension info dictionary~(also known as `prelink info'). The kernel and all kernel extensions of the \gls{kernel-collection} \gls{image} have their \gls{dynamic-linker} info~(e.g. \glspl{image-relocation-fixup}) aggregated into one, unified info \gls{image-segment} for the \gls{dynamic-linker}. This process does not require access to the source code or \glspl{object-file} of the involved modules.}
+\end{figure}
+
+\section{Image File and Asset Digital Signing}
+
+\subsection{Appended Digital Signatures}
+
+One way is to embed the \gls{digital-signature} in the \glspl{image-file}. For example, it can be appended to its end~\cite{pe-authenticode,linux-kmod-sig}.
+
+\begin{algorithm}
+  \caption{Hashing an Executable File With an Appended Digital Signature.}
+  \label{algo:ehash}
+  \begin{algorithmic}[1]
+    \Require{The \gls{executable-file} buffer, \gls{cryptographic-hash} function as input.}
+    \Ensure{The \gls{image} \gls{cryptographic-hash} buffer has the \gls{UE} file \gls{digital-signature}.}
+    \State \Gls{cryptographic-hash} the range $[0 \twodots \text{\lstinline{UnsignedSize}} - 1]$ of the \gls{executable-file} buffer.
+  \end{algorithmic}
+\end{algorithm}
+
+\subsection{External Digital Signatures}
+
+Another approach to storing \glspl{digital-signature} is externally from the file they sign. This is employed by \glsxtrshort{Apple} both for their \gls{firmware}-level and \gls{kernel-space} (i.e. \glsxtrshort{Apple} Image4), as well user-space (i.e. \glsxtrshort{Apple} application bundles) designs. The main advantages are that the signed file remains unchanged and that the filesystem takes over some parsing burden from the \gls{image-file-loader}. Depending on the cryptographic hashing algorithm, the signed file does not need to be parsed at all to authenticate it.
+
+\subsection{Container Digital Signatures}
+
+Similar to embedded \glspl{digital-signature}, a container format could be specified where the \gls{digital-signature} is essentially prepended. This has the advantage that the signed data does not need to be parsed in any shape or form before authenticating it. Further, this could be implemented as a generic format that is independent of the data that is signed. Most importantly, it can also be used for all assets that an \gls{image-file} may require and, in theory, authenticating the file could be part of loading the file from storage. However, such standardization is rather unrealistic and involving external \glspl{digital-signature} to collectively sign all assets in a database is likely more efficient and flexible.
+
+\section{Self-Relocation}
+
+\section{Implementing Safety-Critical Code in Rust}
+
+% TODO: Rust
