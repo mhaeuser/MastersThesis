@@ -320,11 +320,6 @@ NameToType (
     || (strcmp (TypeName, "RT_DRIVER") == 0)) {
     return EFI_IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER;
   }
-  
-  if ((strcmp (TypeName, "DXE_SAL_DRIVER") == 0)
-    || (strcmp (TypeName, "SAL_RT_DRIVER") == 0)) {
-    return EFI_IMAGE_SUBSYSTEM_SAL_RUNTIME_DRIVER;
-  }
 
   return -1;
 }
