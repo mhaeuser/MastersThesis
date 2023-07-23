@@ -1,0 +1,146 @@
+\documentclass[
+	bibliography=totoc, % Add the bibliography to the TOC
+	listof=totoc,      % Add the "List of *" to the TOC
+	final              % Set document status as FINAL
+	%draft              % Set document status as DRAFT: Faster, skips some stuff (e.g. referencing)
+]{scrbook}              % scrbook defaults: a4paper, twoside, openright, 11pt
+
+\overfullrule 5pt
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Input encoding: UTF8
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+\usepackage[table]{xcolor}
+\usepackage{amsmath}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Requirements
+
+% TIKZ
+\usepackage{tikz}
+    \usetikzlibrary{external} % Externalizes Tikz graphics - speeds up compilation if unchanged.
+
+\usepackage{subcaption}
+\usepackage{multirow}
+
+\addtokomafont{disposition}{\rmfamily}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Page Geometry Layout
+
+\usepackage[
+        a4paper,
+        top=35mm,
+        bottom=40mm,
+        inner=35mm,
+        outer=40mm,
+        bindingoffset=5mm,
+        marginparsep=5mm,
+        marginparwidth=40mm,
+        %showframe  % Can be enabled to debug the page geometry
+    ]{geometry}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Header & Footer
+
+\usepackage[
+        headsepline,
+        footsepline,
+        draft=false     % Draft mode adds "ruler" instead of header/footer, we never want that!
+    ]{scrlayer-scrpage}
+
+% Style
+\renewcommand*{\chaptermarkformat}{\chapapp~\thechapter:\enskip}% Put "chapter" or "appendix" in front of the chapter number in running head
+\clearpairofpagestyles
+\ohead{\headmark}
+\automark[chapter]{chapter}
+\automark*[section]{}
+\ofoot*{\pagemark}
+\pagestyle{scrheadings}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
+% PDF Links 
+
+\usepackage[
+        bookmarksdepth=3,   % bookmark levels in the PDF.
+        bookmarksnumbered,  % Show section numbering in bookmark
+        hidelinks
+    ]{hyperref}
+
+\usepackage[lighttt]{lmodern}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% --------------------------------------------------------------------------- %
+% --------------------------------------------------------------------------- %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+% Variables, Commands, Macros
+
+\input{variables.tex}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Set PDF attributes %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\makeatletter
+\hypersetup{
+    pdftitle = {\@title},
+    pdfauthor= {\@author}
+}
+\makeatother
+
+\usepackage{newfloat}
+\DeclareFloatingEnvironment[fileext=frm,placement={!ht},name={Source Code}, listname={List of Source Code Examples}]{lstfloat}
+
+\newcommand{\saveparinfos}{%
+    \edef\myindent{\the\parindent}%
+    \edef\myparskip{\the\parskip}}
+
+
+\newcommand{\useparinfo}{%
+    \setlength{\parindent}{\myindent}%
+    \setlength{\parskip}{\myparskip}}
+
+\usepackage{csquotes}
+\usepackage[ngerman,british]{babel}
+\usepackage{amsthm}
+\usepackage{amsfonts}
+
+\renewcommand{\familydefault}{\sfdefault}
+\renewcommand{\seriesdefault}{\bfdefault}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% --------------------------------------------------------------------------- %
+% -MAIN DOCUMENT------------------------------------------------------------- %
+% --------------------------------------------------------------------------- %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\frontmatter
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Titlepage %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newgeometry{margin=1in}
+\begin{titlepage}
+    \makeatletter
+        \centering
+        \includegraphics[width=5cm]{RPTU Logo_minimal_1cschwarz}\par\vspace*{\fill}
+        {\scshape\huge\sffamily Designing a Secure and Space-Efficient\break Executable File Format for the\break Unified Extensible Firmware Interface\par}\vspace*{\fill}
+        {\Large\bfseries \thesisType's Thesis\par} \vspace{1cm}
+        {\Large by\par} \vspace{1cm}
+        {\LARGE\@author\par}\vspace{1cm}
+        {\Large 17th July 2023\par}\vspace*{\fill}
+        {\Large University of Kaiserslautern-Landau\\
+        \Large Department of Computer Science\par}
+    \makeatother
+\end{titlepage}
+\restoregeometry
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\end{document}
