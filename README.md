@@ -21,4 +21,12 @@ To separate CI and artifact distribution for the different components and stages
 * [audk_errata](https://github.com/mhaeuser/MastersThesis/tree/audk_errata): Changes to the [audk](https://github.com/mhaeuser/MastersThesis/tree/audk) branch that did not make it in time to meet the deadline.
 * [thesis](https://github.com/mhaeuser/MastersThesis/tree/thesis): The LaTeX sources for the thesis document.
 
-Due to limitations with Ubuntu package archiving and dependency chain version-pinning, all container images in this repository are only 'semi-reproducible'.
+## Artifact Evaluation
+
+For artifact evaluation and best-effort reproducibility, the [Releases](https://github.com/mhaeuser/MastersThesis/releases) contain the Docker container image, artifacts, and test results used for this work. Due to limitations with Ubuntu package archiving and dependency chain version-pinning, all container images in this repository are only 'semi-reproducible'.
+
+## Publishing
+
+This work has been published by the Embedded Systems Group at the University of Kaiserslautern-Landau.
+[[PDF]](https://es.cs.rptu.de/publications/datarsg/Haeu23.pdf)
+[[BibTeX]](https://es.cs.rptu.de/publications/entries/Haeu23.bib)
